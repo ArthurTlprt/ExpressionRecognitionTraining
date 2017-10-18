@@ -1,0 +1,7 @@
+/h5
+/Manually_Annotated_Images
+/mean_std
+/out
+/snapshots
+*.csv
+*.hdf5
