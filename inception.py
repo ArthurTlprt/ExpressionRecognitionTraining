@@ -10,34 +10,23 @@ from keras.models import Sequential, Model
 from keras.layers import Input, Conv2D, BatchNormalization, Activation, Lambda, MaxPooling2D, Flatten, Dense, Dropout, Concatenate, Add, AveragePooling2D
 
 
-def generate_arrays_from_file(images, labels, batch_size=32, shuffle=True):
-    x = np.zeros((batch_size, 49, 49, 3))
-    y = np.zeros((batch_size, 11))
+def generate_arrays_from_file(images, labels, ids_list, shuffle=True):
+    x = np.zeros((32, 49, 49, 3))
+    y = np.zeros((32, 11))
     batch_id = 0
     while 1:
         if shuffle:
-            split = list(zip(x, y))
-            S(split)
-            x, y = zip(*split)
-            # shuffle les indices des h5 (10 combi)
-        for line in split:
-            # ne pas rouvrir les fichiers h5
-            f = h5py.File('h5/' + line, 'r')
-            images = np.copy(f['data'])
-            classifications = np.copy(f['label_classification'])
-            x = np.zeros((batch_size, 49, 49, 3))
-            y = np.zeros((batch_size, 11))
-            print(range(len(images)))
-            for i in range(len(images)):
-                x[batch_id, ...] = images[i]
-                y[batch_id, ...] = keras.utils.to_categorical(classifications[i], num_classes=11)
-                if batch_id == (batch_size - 1):
+            S(ids_list)
+        x = np.zeros((32, 49, 49, 3))
+        y = np.zeros((32, 11))
+        for id_list in ids_list:
+            for i in range(len(images[id_list])):
+                x[i%32, ...] = images[id_list][i]
+                y[i%32, ...] = keras.utils.to_categorical(labels[id_list][i], num_classes=11)
+                if i%32 == 0:
                     yield (x, y)
-                    batch_id = 0
-                    x = np.zeros((batch_size, 49, 49, 3))
-                    y = np.zeros((batch_size, 11))
-                else:
-                    batch_id += 1
+                    x = np.zeros((32, 49, 49, 3))
+                    y = np.zeros((32, 11))
 
 def custom_conv2d(x, filters, kernel, strides, padding, normalize, activation):
     x = Conv2D(filters, kernel, strides=strides, padding=padding)(x)
@@ -207,45 +196,62 @@ def inception_resnet_v2():
 
 
 
+
 if __name__ == "__main__":
-    print('Loadin dataset...')
+    print('Loading dataset...')
 
 
     # charger mean/std image
     f = h5py.File('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/mean_std/mean_std.hdf5', 'r') # idem
-    mean_image = np.copy(f['mean'])
-    std_image = np.copy(f['std'])
+    mean_image = np.transpose(np.copy(f['mean']))
+    std_image = np.transpose(np.copy(f['std']))
     f.close()
 
 
     images_training = []
     annotations_training = []
-    id_training = []
-
-
+    #####################################
+    # charge les fichiers d'entrainements
+    #####################################
     h5_files = [line.rstrip('\r\n') for line in open('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5_training.txt')]
     for h5_file in h5_files:
         # normaliser le training set
         f = h5py.File('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5/' + h5_file, 'r')
         images_training.append(np.copy(f['data']))
+        print(len(images_training))
+        print(np.copy(f['data']).shape)
         annotations_training.append(np.copy(f['label_classification']))
         f.close()
-
-    id_training = range(0, len(images_training))
-
+        
+    id_training = list(range(0, len(images_training)))
+    
     images_validation = []
     annotations_validation = []
-    id_validation = []
+    
 
+
+    #####################################
+    # charge les fichiers de validation
+    #####################################
     h5_files = [line.rstrip('\r\n') for line in open('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5_validation.txt')]
     for h5_file in h5_files:
         # normaliser le validation set
         f = h5py.File('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5/' + h5_file, 'r')
         images_validation.append(np.copy(f['data']))
         annotations_validation.append(np.copy(f['label_classification']))
+        #print(np.copy(f['label_classification']).shape)
         f.close()
 
-    id_validation = range(0, len(images_validation))
+    id_validation = list(range(0, len(images_validation)))
+    
+    # normalisation
+    for images in images_training:
+        for image in images:
+            image = np.divide((image - std_image), mean_image)
+            
+    for images in images_validation:
+        for image in images:
+            image = np.divide((image - std_image), mean_image)
 
 
     print('Network...')
@@ -259,13 +265,13 @@ if __name__ == "__main__":
     #plot_model(model, to_file='model.png')
 
 
-    #indexlist = [line.rstrip('\r\n') for line in open('training.csv')]
-    #db_size = len(indexlist)
+    indexlist = [line.rstrip('\r\n') for line in open('training.csv')]
+    db_size = len(indexlist)
 
     print('Training...')
     csv_logger = CSVLogger('inception_resnet.log', append=True)
     checkpointer = ModelCheckpoint(filepath='snapshots/{epoch:03d}-{val_loss:.6f}.h5', verbose=1, save_best_only=True)
-    hist = model.fit_generator(generate_arrays_from_file('train'), int(60000/32)-1, epochs=10, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file('val'), validation_steps=int(5500/32)-1, max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0) # a modifie 171 par 569
+    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training, id_training), int(db_size/32)-1, epochs=700, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, id_validation), validation_steps=int(5500/32)-1, max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0) # a modifie 171 par 569
 
     print('Recording...')
     model.save('inception_resnet.h5')
