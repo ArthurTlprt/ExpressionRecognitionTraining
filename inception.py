@@ -192,7 +192,7 @@ def inception_resnet_v2():
 	# x5
 	#for j in range(1):
 	#	x = inception_resnet_v2_c(x)
-	x = AveragePooling2D(pool_size=(5, 5), strides=(1, 1), padding='valid')(x) # (8,8) remplacer (2,2)
+	x = AveragePooling2D(pool_size=(5, 5), strides=(1, 1), padding='valid')(x) # (8,8) remplacer (5,5)
 	x = Flatten()(x)
 	x = Dropout(0.2)(x)
 	x = Dense(11)(x)
