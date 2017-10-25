@@ -7,13 +7,13 @@ from PIL import Image
 face_cascade = cv2.CascadeClassifier('face.xml')
 
 
-#camera initilization
+#camera initilization (default cam is 0)
 cap = cv2.VideoCapture(0)
 
 # we read the cam indefinitely
 while 1:
     ret, img = cap.read()
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(img, cv2.COLOR_)
     # find the face
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
     # if a face is found
