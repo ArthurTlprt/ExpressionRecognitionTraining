@@ -3,6 +3,7 @@
 /mean_std
 /out
 /snapshots
+/tmp
 *.csv
 *.hdf5
 *.h5
