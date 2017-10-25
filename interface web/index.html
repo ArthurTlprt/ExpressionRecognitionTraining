@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Visualisation des données</title>
+  </head>
+  <body>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script type="text/javascript">
+      Plotly.d3.csv('https://raw.githubusercontent.com/plotly/datasets/master/gapminderDataFiveYear.csv', function(err, rows){
+      var YEAR = 2007;
+      var continents = ['Asia', 'Europe', 'Africa', 'Oceania', 'Americas'];
+      var POP_TO_PX_SIZE = 2e5;
+      function unpack(rows, key) {
+      return rows.map(function(row) { return row[key]; });
+      }
+
+      var data = continents.map(function(continent) {
+      var rowsFiltered = rows.filter(function(row) {
+          return (row.continent === continent) && (+row.year === YEAR);
+      });
+      return {
+          mode: 'markers',
+          name: continent,
+          x: unpack(rowsFiltered, 'lifeExp'),
+          y: unpack(rowsFiltered, 'gdpPercap'),
+          text: unpack(rowsFiltered, 'country'),
+          marker: {
+              sizemode: 'area',
+              size: unpack(rowsFiltered, 'pop'),
+              sizeref: POP_TO_PX_SIZE
+          }
+      };
+      });
+      var layout = {
+      xaxis: {title: 'Life Expectancy'},
+      yaxis: {title: 'GDP per Capita', type: 'log'},
+      margin: {t: 20},
+      hovermode: 'closest'
+      };
+      Plotly.plot('my-graph', data, layout, {showLink: false});
+      });
+    </script>
+
+    <div id='my-graph' style="width:1000px;height:600px;"></div>
+
+  </body>
+</html>

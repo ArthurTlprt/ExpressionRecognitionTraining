@@ -184,14 +184,13 @@ def inception_resnet_v2():
 	x = AveragePooling2D(pool_size=(5, 5), strides=(1, 1), padding='valid')(x) # (8,8) remplacer (5,5)
 	x = Flatten()(x)
 	x = Dropout(0.2)(x)
-	x = Dense(2)(x)
-	o = Activation('softmax')(x)
+	o = Dense(2)(x)
+
 
 	model = Model(inputs=i, outputs=o)
 
 	model.summary()
 
-	model.compile(optimizer='adam', loss='categorical_crossentropy')
 	return model
 
 
@@ -202,8 +201,8 @@ if __name__ == "__main__":
 
     # charger mean/std image
     f = h5py.File('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/mean_std/mean_std.hdf5', 'r') # idem
-    mean_image = np.transpose(np.copy(f['mean']))
-    std_image = np.transpose(np.copy(f['std']))
+    mean_image = np.copy(f['mean']).transpose(1, 2, 0)
+    std_image = np.copy(f['std']).transpose(1, 2, 0)
     f.close()
 
 
@@ -219,12 +218,12 @@ if __name__ == "__main__":
         images_training.append(np.copy(f['data']))
         annotations_training.append(np.copy(f['label_regression']))
         f.close()
-        
+
     id_training = list(range(0, len(images_training)))
-    
+
     images_validation = []
     annotations_validation = []
-    
+
 
 
     #####################################
@@ -240,15 +239,15 @@ if __name__ == "__main__":
         f.close()
 
     id_validation = list(range(0, len(images_validation)))
-    
+
     # normalisation
     for images in images_training:
         for image in images:
-            image = np.divide((image - std_image), mean_image)
-            
+            image = np.divide((image - mean_image), std_image)
+
     for images in images_validation:
         for image in images:
-            image = np.divide((image - std_image), mean_image)
+            image = np.divide((image - mean_image), std_image)
 
 
     print('Network...')
@@ -256,19 +255,19 @@ if __name__ == "__main__":
 
     print('Optimization...')
     adam = optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-    model.compile(loss='mean_squared_error', optimizer= adam, metrics='acc')
+    model.compile(loss='mean_squared_error', optimizer= adam, metrics=['mse', 'mae'])
 
     model.summary()
     #plot_model(model, to_file='model.png')
 
 
-    indexlist = [line.rstrip('\r\n') for line in open('training.csv')]
+    indexlist = [line.rstrip('\r\n') for line in open('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/training.csv')]
     db_size = len(indexlist)
 
     print('Training...')
     csv_logger = CSVLogger('inception_resnet.log', append=True)
     checkpointer = ModelCheckpoint(filepath='snapshots/{epoch:03d}-{val_loss:.6f}.h5', verbose=1, save_best_only=True)
-    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training, id_training), int(db_size/32)-1, epochs=700, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, id_validation), validation_steps=int(5500/32)-1, max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0) # a modifie 171 par 569
+    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training, id_training), int(db_size/32)-1, epochs=400, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, id_validation), validation_steps=int(5500/32)-1, max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0) # a modifie 171 par 569
 
     print('Recording...')
     model.save('inception_resnet.h5')

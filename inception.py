@@ -190,15 +190,14 @@ def inception_resnet_v2():
 
 	model.summary()
 
-	model.compile(optimizer='adam', loss='categorical_crossentropy')
 	return model
 
 
 def load_mean_std(h5_path):
     # charger mean/std image
     f = h5py.File(h5_path, 'r') # idem
-    mean_image = np.transpose(np.copy(f['mean']))
-    std_image = np.transpose(np.copy(f['std']))
+    mean_image = np.copy(f['mean']).transpose(1, 2, 0)
+    std_image = np.copy(f['std']).transpose(1, 2, 0)
     f.close()
     return mean_image, std_image
 
@@ -231,13 +230,13 @@ if __name__ == "__main__":
     images_validation, annotations_validation, id_validation = load_data('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5_validation.txt')
 
     # normalisation
-    for images in images_training:
-        for image in images:
-            image = normalize_image(image)
-
-    for images in images_validation:
-        for image in images:
-            image = normalize_image(image)
+    # for images in images_training:
+    #     for image in images:
+    #         image = normalize_image(image)
+    #
+    # for images in images_validation:
+    #     for image in images:
+    #         image = normalize_image(image)
 
 
     print('Network...')
@@ -256,6 +255,8 @@ if __name__ == "__main__":
 
     print('Training...')
     #tbCallback=keras.callbacks.TensorBoard(log_dir='/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/TBlogs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None)
+
+    # poids, loss, accuracy, val_loss, val_accuracy
     csv_logger = CSVLogger('inception_resnet.log', append=True)
     checkpointer = ModelCheckpoint(filepath='snapshots/{epoch:03d}-{val_loss:.6f}.h5', verbose=1, save_best_only=True)
     hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training, id_training), int(db_size/32)-1, epochs=400, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, id_validation), validation_steps=int(5500/32)-1, max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0) # a modifie 171 par 569

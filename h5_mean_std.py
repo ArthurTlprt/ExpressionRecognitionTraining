@@ -28,14 +28,15 @@ print(db_size)
 print('Compute mean image...')
 for images in h5:
     for image in images:
-        mean_image = mean_image + np.transpose(image)/db_size
+        print(image.shape)
+        mean_image = mean_image + image.transpose(2, 0, 1)/db_size
 mio.export_image(mi.Image(mean_image), "mean_std/mean_image.png", overwrite=True)
 
 
 print('Compute std image...')
 for images in h5:
     for image in images:
-        std_image = std_image + np.power((np.transpose(image)-mean_image), 2)/db_size
+        std_image = std_image + np.power((image.transpose(2, 0, 1)-mean_image), 2)/db_size
 std_image = np.sqrt(std_image)
 mio.export_image(mi.Image(std_image), "mean_std/std_image.png", overwrite=True)
 
