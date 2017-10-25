@@ -12,21 +12,21 @@ from keras.layers import Input, Conv2D, BatchNormalization, Activation, Lambda, 
 
 def generate_arrays_from_file(images, labels, ids_list, shuffle=True):
     x = np.zeros((32, 49, 49, 3))
-    y = np.zeros((32, 11))
+    y = np.zeros((32, 2))
     batch_id = 0
     while 1:
         if shuffle:
             S(ids_list)
         x = np.zeros((32, 49, 49, 3))
-        y = np.zeros((32, 11))
+        y = np.zeros((32, 2))
         for id_list in ids_list:
             for i in range(len(images[id_list])):
                 x[i%32, ...] = images[id_list][i]
-                y[i%32, ...] = keras.utils.to_categorical(labels[id_list][i], num_classes=11)
+                y[i%32, ...] = labels[id_list][i]
                 if i%32 == 0:
                     yield (x, y)
                     x = np.zeros((32, 49, 49, 3))
-                    y = np.zeros((32, 11))
+                    y = np.zeros((32, 2))
 
 def custom_conv2d(x, filters, kernel, strides, padding, normalize, activation):
     x = Conv2D(filters, kernel, strides=strides, padding=padding)(x)
@@ -184,7 +184,7 @@ def inception_resnet_v2():
 	x = AveragePooling2D(pool_size=(5, 5), strides=(1, 1), padding='valid')(x) # (8,8) remplacer (5,5)
 	x = Flatten()(x)
 	x = Dropout(0.2)(x)
-	x = Dense(11)(x)
+	x = Dense(2)(x)
 	o = Activation('softmax')(x)
 
 	model = Model(inputs=i, outputs=o)
@@ -193,7 +193,6 @@ def inception_resnet_v2():
 
 	model.compile(optimizer='adam', loss='categorical_crossentropy')
 	return model
-
 
 
 
@@ -218,9 +217,7 @@ if __name__ == "__main__":
         # normaliser le training set
         f = h5py.File('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5/' + h5_file, 'r')
         images_training.append(np.copy(f['data']))
-        print(len(images_training))
-        print(np.copy(f['data']).shape)
-        annotations_training.append(np.copy(f['label_classification']))
+        annotations_training.append(np.copy(f['label_regression']))
         f.close()
         
     id_training = list(range(0, len(images_training)))
@@ -238,7 +235,7 @@ if __name__ == "__main__":
         # normaliser le validation set
         f = h5py.File('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5/' + h5_file, 'r')
         images_validation.append(np.copy(f['data']))
-        annotations_validation.append(np.copy(f['label_classification']))
+        annotations_validation.append(np.copy(f['label_regression']))
         #print(np.copy(f['label_classification']).shape)
         f.close()
 
@@ -259,7 +256,7 @@ if __name__ == "__main__":
 
     print('Optimization...')
     adam = optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-    model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['acc'])
+    model.compile(loss='mean_squared_error', optimizer= adam, metrics='acc')
 
     model.summary()
     #plot_model(model, to_file='model.png')
