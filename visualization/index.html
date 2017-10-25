@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Visu</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous">
+  </head>
+
+  <body>
+    <div class="container">
+      <br>
+      <div class="input-group">
+        <span class="input-group-addon" id="basic-addon1">csv</span>
+        <input id="submit" type="text" class="form-control" placeholder="full path" aria-label="Username" aria-describedby="basic-addon1">
+      </div>
+      <br />
+      <button type="button" class="btn btn-primary" onclick="load_csv()">Load</button>
+      <br>
+      <div id="my-graph" style="width:600px;height:250px;"></div>
+
+    </div>
+
+
+  </body>
+  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script>
+  function load_csv() {
+    // get the path from the interface
+    let path = document.getElementById("submit").value;
+
+    // defining graph
+    Plotly.d3.csv(path, function(err, rows){
+      console.log(rows);
+      var x = [], y = [];
+
+      for (var i=0; i<rows.length; i++) {
+        row = rows[i];
+        x.push( Number(row['x']) );
+        y.push( Number(row['y']) );
+        console.log(x, y);
+      }
+      data = [{
+        x: x,
+        y: y
+      }];
+      console.log(data[0].x)
+      Plotly.plot('my-graph', data);
+      console.log("success");
+    });
+  }
+  </script>
+
+</html>
