@@ -11,29 +11,66 @@
   </head>
 
   <body>
+    <br />
     <div class="container">
-      <br>
-      <div class="input-group">
-        <span class="input-group-addon" id="basic-addon1">csv</span>
-        <input id="submit" type="text" class="form-control" placeholder="full path" aria-label="Username" aria-describedby="basic-addon1">
+      <div class="row">
+        <h2 class="col-3">Loss curve</h2>
+        <div class="input-group col-4">
+          <span class="input-group-addon" id="basic-addon1">loss csv</span>
+          <input id="loss_csv" type="text" class="form-control" placeholder="loss.csv" aria-label="Username" aria-describedby="basic-addon1">
+        </div>
+        <div class="col-1">
+          <button type="button" class="btn btn-primary" onclick="load_loss()">Load</button>
+        </div>
+        <div class="col-1">
+          <button type="button" class="btn btn-danger" onclick="clear('loss');reset_ul('loaded_loss')">Clear</button>
+        </div>
+
       </div>
-      <br />
-      <button type="button" class="btn btn-primary" onclick="load_csv()">Load</button>
+      <ul id="loaded_loss">
+      </ul>
+      <div class="col-sm" id="loss" style="width:600px;height:250px;"></div>
+
       <br>
-      <div id="my-graph" style="width:600px;height:250px;"></div>
+      <div class="row">
+        <h2 class="col-3">Learning curve</h2>
+        <div class="input-group col-8">
+          <span class="input-group-addon" id="basic-addon1">training loss</span>
+          <input id="learning_curve_training" type="text" class="form-control" placeholder="csv path" aria-label="Username" aria-describedby="basic-addon1">
+          <span class="input-group-addon" id="basic-addon1">validation loss</span>
+          <input id="learning_curve_validation" type="text" class="form-control" placeholder="csv path" aria-label="Username" aria-describedby="basic-addon1">
+        </div>
+        <button type="button" class="btn btn-primary col-1" onclick="load_learning_curve()">Load</button>
+      </div>
+      <div id="learning_curve" style="width:600px;height:250px;"></div>
+
 
     </div>
-
-
   </body>
-  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script>
-  function load_csv() {
+
+  function clear(id_graph) {
+    Plotly.purge(id_graph);
+  }
+  function reset_ul(id_ul) {
+    let ul = document.getElementById(id_ul);
+    while (ul.hasChildNodes()) {
+      ul.removeChild(ul.firstChild);
+    }
+  }
+
+  function load_loss() {
     // get the path from the interface
-    let path = document.getElementById("submit").value;
+    let input = document.getElementById("loss_csv");
+    let path = input.value;
+    document.getElementById("loaded_loss").insertAdjacentHTML('beforeend', "<li>"+input.value+"</li>");
+    input.value = "";
+
+
+
 
     // defining graph
     Plotly.d3.csv(path, function(err, rows){
@@ -51,7 +88,51 @@
         y: y
       }];
       console.log(data[0].x)
-      Plotly.plot('my-graph', data);
+      Plotly.plot('loss', data);
+      console.log("success");
+    });
+  }
+
+  function load_learning_curve() {
+    // get the path from the interface
+    let training = document.getElementById("learning_curve_training").value;
+    let validation = document.getElementById("learning_curve_validation").value;
+
+    // defining graph
+    Plotly.d3.csv(training, function(err, rows){
+      console.log(rows);
+      var x = [], y = [];
+
+      for (var i=0; i<rows.length; i++) {
+        row = rows[i];
+        x.push( Number(row['x']) );
+        y.push( Number(row['y']) );
+        console.log(x, y);
+      }
+      training = [{
+        x: x,
+        y: y
+      }];
+      Plotly.plot('learning_curve', training);
+      console.log("success");
+    });
+
+    // defining graph
+    Plotly.d3.csv(validation, function(err, rows){
+      console.log(rows);
+      var x = [], y = [];
+
+      for (var i=0; i<rows.length; i++) {
+        row = rows[i];
+        x.push( Number(row['x']) );
+        y.push( Number(row['y']) );
+        console.log(x, y);
+      }
+      validation = [{
+        x: x,
+        y: y
+      }];
+      Plotly.plot('learning_curve', validation);
       console.log("success");
     });
   }
