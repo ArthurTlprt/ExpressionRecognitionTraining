@@ -32,7 +32,7 @@ for line in csv_data:
     elif data[3] == '4' and len(Fear) < 60000:
         data.append('1')
         Fear.append(data)
-    elif data[3] == '5' and len(Anger) < 60000:
+    elif data[3] == '6' and len(Anger) < 60000:
         data.append('1')
         Anger.append(data)
     elif data[3] == '10' and len(Non_Face) < 60000:
