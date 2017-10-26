@@ -38,6 +38,6 @@ for csv_name in csv_names:
         g.close()
     else:
         while len(lines) != 60000:
-            
+
 
 print("done")

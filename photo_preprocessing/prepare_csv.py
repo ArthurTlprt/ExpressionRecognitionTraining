@@ -9,7 +9,6 @@ Neutral = []
 Happy = []
 Sad = []
 Surprise = []
-Fear = []
 Anger = []
 Non_Face = []
 
@@ -29,9 +28,6 @@ for line in csv_data:
     elif data[3] == '3' and len(Surprise) < 60000:
         data.append('1')
         Surprise.append(data)
-    elif data[3] == '4' and len(Fear) < 60000:
-        data.append('1')
-        Fear.append(data)
     elif data[3] == '5' and len(Anger) < 60000:
         data.append('1')
         Anger.append(data)
@@ -55,10 +51,6 @@ with open('Sad', 'w') as class_file:
 with open('Surprise', 'w') as class_file:
     wr = csv.writer(class_file)
     wr.writerows(Surprise)
-
-with open('Fear', 'w') as class_file:
-    wr = csv.writer(class_file)
-    wr.writerows(Fear)
 
 with open('Anger', 'w') as class_file:
     wr = csv.writer(class_file)

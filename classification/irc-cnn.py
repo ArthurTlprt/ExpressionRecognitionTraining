@@ -9,26 +9,23 @@ from keras.utils import plot_model
 from keras.models import Sequential, Model
 from keras.layers import Input, Conv2D, BatchNormalization, Activation, Lambda, MaxPooling2D, Flatten, Dense, Dropout, Concatenate, Add, AveragePooling2D
 
-def generate_arrays_from_file(images, labels, shuffle=True, batch_size=32):
+def generate_arrays_from_file(images, labels, batch_size=32, shuffle=True):
     x = np.zeros((batch_size, 49, 49, 3))
-    y = np.zeros((batch_size, 11))
+    y = np.zeros((batch_size, 6))
     batch_id = 0
+    if shuffle:
+        c = list(zip(images, labels))
+        S(c)
+        images, labels = zip(*c)
     while 1:
-        ids_list = np.arange(0, len(images))
-        if shuffle:
-            S(ids_list)
-        for id_list in ids_list:
-            #ids_im = np.arange(0, len(images[id_list]))
-            #if shuffle:
-            #    S(ids_im)
-            for i in range(0, len(images[id_list])):
-                x[batch_id, ...] = images[id_list][i]
-                y[batch_id, ...] = keras.utils.to_categorical(labels[id_list][i], num_classes=11)
-                if batch_id == (batch_size - 1):            
-                    yield (x, y)
-                    batch_id = 0
-                else:
-                    batch_id += 1
+        for i in range(0, len(images)):
+            x[batch_id, ...] = images[i]
+            y[batch_id, ...] = keras.utils.to_categorical(labels[i], num_classes=6)
+            if batch_id == (batch_size - 1):
+                yield (x, y)
+                batch_id = 0
+            else:
+                batch_id += 1
 
 def custom_conv2d(x, filters, kernel, strides, padding, normalize, activation):
 
@@ -104,7 +101,7 @@ def inception_resnet_v2():
     #x = AveragePooling2D(pool_size=(9, 9), strides=(1, 1), padding='same')(x)
     x = Dropout(0.2)(x)
     x = Flatten()(x)
-    x = Dense(11)(x)
+    x = Dense(6)(x)
     o = Activation('softmax')(x)
 
     model = Model(inputs=i, outputs=o)
@@ -122,18 +119,29 @@ def load_mean_std(h5_path):
 
     return mean_image, std_image
 
-def load_data(txt_path):
+def load_data():
 
-    images = []
-    annotations = []
-    h5_files = [line.rstrip('\r\n') for line in open(txt_path)]
-    for h5_file in h5_files:
-        f = h5py.File("/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5/" + h5_file, 'r')
-        images.append(np.copy(f['data']))
-        annotations.append(np.copy(f['label_classification']))
+    images_training = []
+    annotations_training = []
+    images_validation = []
+    annotations_validation = []
+
+    csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger', 'Non_Face']
+
+    for csv_name in csv_names:
+        f = h5py.File("../classes/training"+csv_name+".hdf5", 'r')
+        # fonctionne probablement pas
+        images_training += f['data'][:48000-1]
+        images_validation += f['data'][48000:]
+        annotations_training += f['label_classification'][:48000-1]
+        annotations_validation += f['label_classification'][48000:]
         f.close()
 
-    return images, annotations
+        c = list(zip(images_training, annotations_training))
+        S(c)
+        images_training, annotations_training = zip(*c)
+
+    return images_training, annotations_training, images_validation, annotations_validation
 
 def normalize_image(image):
     return np.divide((image - mean_image), std_image)
@@ -142,19 +150,16 @@ if __name__ == "__main__":
 
     print('Loading dataset...')
 
-    mean_image, std_image = load_mean_std('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/mean_std/mean_std.hdf5')
+    global mean_image, std_image = load_mean_std('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/mean_std/mean_std.hdf5')
 
-    images_training, annotations_training = load_data('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5_training.txt')
+    images_training, annotations_training, images_validation, annotations_validation = load_data()
 
-    images_validation, annotations_validation = load_data('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5_validation.txt')
 
-    for eit, images in enumerate(images_training):
-        for ei, image in enumerate(images):
-            images_training[eit][ei] = normalize_image(image)
+    for i, image in enumerate(images_training):
+        images_training[i] = normalize_image(image)
 
-    for eit, images in enumerate(images_validation):
-        for ei, image in enumerate(images):
-            images_validation[eit][ei] = normalize_image(image)
+    for eit, image in enumerate(images_validation):
+        images_validation[i] = normalize_image(image)
 
 
     print('Network...')
@@ -164,16 +169,12 @@ if __name__ == "__main__":
     adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['acc'])
 
-    #plot_model(model, to_file='model.png')
-
-    indexlist = [line.rstrip('\r\n') for line in open('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/training.csv')]
-    db_size = len(indexlist)
 
     print('Training...')
 
     csv_logger = CSVLogger('irc-cnn.log', append=True)
     checkpointer = ModelCheckpoint(filepath='snapshots/irc-cnn-{epoch:03d}-{val_loss:.6f}.h5', verbose=1, save_best_only=True)
-    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training), int(360000/32)-1, epochs=500, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation), validation_steps=int(5500/32)-1, max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0)
+    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training), int(288000/32)-1, epochs=500, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, shuffle=False), validation_steps=int(72000/32)-1, max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0)
 
     print('Recording...')
     model.save('irc-cnn.h5')
