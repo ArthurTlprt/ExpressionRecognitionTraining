@@ -4,6 +4,7 @@
 /out
 /snapshots
 /tmp
+/classes
 *.csv
 *.hdf5
 *.h5

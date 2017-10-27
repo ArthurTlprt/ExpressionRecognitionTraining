@@ -9,7 +9,6 @@ Neutral = []
 Happy = []
 Sad = []
 Surprise = []
-Fear = []
 Anger = []
 Non_Face = []
 
@@ -55,10 +54,6 @@ with open('Sad', 'w') as class_file:
 with open('Surprise', 'w') as class_file:
     wr = csv.writer(class_file)
     wr.writerows(Surprise)
-
-with open('Fear', 'w') as class_file:
-    wr = csv.writer(class_file)
-    wr.writerows(Fear)
 
 with open('Anger', 'w') as class_file:
     wr = csv.writer(class_file)
