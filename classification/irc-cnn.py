@@ -127,6 +127,7 @@ def load_data():
     images_validation = f['data'][48000:60000]
     annotations_training = f['label_classification'][:20000]
     annotations_validation = f['label_classification'][48000:60000]
+    f.close()
 
     #csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger', 'Non_Face']
     csv_names = ['Neutral', 'Happy', 'Sad']
