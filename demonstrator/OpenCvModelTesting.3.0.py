@@ -24,6 +24,7 @@ def showFineResults(preds):
     L=["Neutral","Happiness", "Sadness", "Surprise", "Anger"]
     msp=np.float32(0)
     index=0
+    
     for i in range(5):
         if preds[0][i]>msp:
             msp=preds[0][i]
@@ -32,6 +33,20 @@ def showFineResults(preds):
 
         #cv.imwrite('picturetest.png', capture)
     return(L[index])
+
+def moyenneResult(preds):
+    for i in range(5):
+        preds[]
+
+def isTheSame(liste_avant, liste_now, delta):
+    if((len(liste_avant)!= len(liste_now)) | (len(liste_now)==0 & len(liste_avant)==0)):
+        return False
+    bool=True
+    for i in range(4):
+        if(liste_avant[i]>liste_now[i]+delta | liste_avant[i]<liste_now[i]-delta):
+            return False
+    return bool
+
 
 def superpose(frame,image,x,y): #arrays en parametres.
     width=np.shape(image)[0]
@@ -61,6 +76,8 @@ face_cascade = cv.CascadeClassifier('face.xml')
 cap = cv.VideoCapture(0)
 lastpicture=time.time()
 number=0
+etat_avant= False
+listeCoordonnee=[[]]
 # we read the cam indefinitely
 while 1:
 
@@ -72,10 +89,13 @@ while 1:
     faces = face_cascade.detectMultiScale(img, 1.3, 5)
     # if a face is found
     listeEmotion=[]
+    listeCoordRef=listeCoordonnee
+    listeCoordonnee = []
     for index,(x,y,w,h) in enumerate(faces):
         #drawing rectangles
         # subarray corresponding to the face
-        np_face = img[y:y+h, x:x+w]     
+        np_face = img[y:y+h, x:x+w]
+
 
         # converting into PIL.Image object to resize
         pil_face = Image.fromarray(np_face, 'RGB')
@@ -95,10 +115,11 @@ while 1:
         #prediction
         np_face =np.expand_dims(np_face, axis=0)
         preds= model.predict(normalize(np_face,mean_image,std_image))
+        listeCoordonnee.append([[x, y, w, h], preds])
 
         cv.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
         listeEmotion.append(showFineResults(preds))
-        print(listeEmotion)
+        #print(listeEmotion)
 
         cv.putText(img, showFineResults(preds), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
         
@@ -106,15 +127,23 @@ while 1:
         #print(np_face.shape)
 
         #call le predict
-
+    print("liste des coordonnées d'avant", listeCoordonnee, "ceux d'après", listeCoordRef)
+    # if((len(listeCoordonnee)!=0) & (len(listeCoordRef)!=0)):
+    #     # print("liste des coordonnées d'avant", listeCoordonnee[0])
+    #     # print("liste que l'on copie ",  listeCoordRef[0])
+    #     print(isTheSame(listeCoordRef[0], listeCoordonnee[0], 5))
     timepicture = time.time()
-    if ((testTousHappy(listeEmotion)) & (timepicture - lastpicture > 5)):
-        lastpicture = timepicture
-        pil_image = Image.fromarray(img, 'RGB')
-        b, g, r = pil_image.split()
-        pil_image = Image.merge("RGB", (r, g, b))
-        pil_image.save('savepicture\pict' + str(number) + '.png')
-        number += 1
+    # if (testTousHappy(listeEmotion)):
+    #     etat_avant=True
+    #     if(timepicture - lastpicture > 5):
+    #         lastpicture = timepicture
+    #         pil_image = Image.fromarray(img, 'RGB')
+    #         b, g, r = pil_image.split()
+    #         pil_image = Image.merge("RGB", (r, g, b))
+    #         pil_image.save('savepicture\pict' + str(number) + '.png')
+    #        number += 1
+    # else:
+    #     etat_avant=False
     img=cv.resize(img,None,fx=1.6,fy=1.6)#imgcv2.resize(img,(2,2))
     cv.imshow('img',img)
     # kill with ctr+c
