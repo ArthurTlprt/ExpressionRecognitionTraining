@@ -211,34 +211,31 @@ if __name__ == "__main__":
     #####################################
     # charge les fichiers d'entrainements
     #####################################
-    h5_files = [line.rstrip('\r\n') for line in open('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5_training.txt')]
-    for h5_file in h5_files:
-        # normaliser le training set
-        f = h5py.File('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5/' + h5_file, 'r')
-        images_training.append(np.copy(f['data']))
-        annotations_training.append(np.copy(f['label_regression']))
-        f.close()
 
-    id_training = list(range(0, len(images_training)))
 
-    images_validation = []
-    annotations_validation = []
 
 
 
     #####################################
     # charge les fichiers de validation
     #####################################
-    h5_files = [line.rstrip('\r\n') for line in open('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5_validation.txt')]
-    for h5_file in h5_files:
-        # normaliser le validation set
-        f = h5py.File('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/h5/' + h5_file, 'r')
-        images_validation.append(np.copy(f['data']))
-        annotations_validation.append(np.copy(f['label_regression']))
-        #print(np.copy(f['label_classification']).shape)
-        f.close()
 
+    csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger', 'Non_Face']
+    images_training = np.zeros((6*30000, 49, 49, 3), np.float32)
+    images_validation = np.zeros((6*12000, 49, 49, 3), np.float32)
+    annotations_training = np.zeros((6*30000), np.uint8)
+    annotations_validation = np.zeros((6*12000), np.uint8)
+    for i, csv_name in enumerate(csv_names):
+        f = h5py.File("../classes/training"+csv_name+".hdf5", 'r')
+        images_training[i*30000:(i+1)*30000] = f['data'][:30000]
+        images_validation[i*12000:(i+1)*12000] = f['data'][48000:60000]
+        annotations_training[i*30000:(i+1)*30000] = f['label_regression'][:30000]
+        annotations_validation[i*12000:(i+1)*12000] = f['label_regression'][48000:60000]
+        f.close()
     id_validation = list(range(0, len(images_validation)))
+    id_training = list(range(0, len(images_training)))
+
+
 
     # normalisation
     for images in images_training:

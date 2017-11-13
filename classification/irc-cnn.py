@@ -9,9 +9,11 @@ from keras.utils import plot_model
 from keras.models import Sequential, Model
 from keras.layers import Input, Conv2D, BatchNormalization, Activation, Lambda, MaxPooling2D, Flatten, Dense, Dropout, Concatenate, Add, AveragePooling2D
 
+
+
 def generate_arrays_from_file(images, labels, batch_size=32, shuffle=True):
     x = np.zeros((batch_size, 49, 49, 3))
-    y = np.zeros((batch_size, 6))
+    y = np.zeros((batch_size, 5))
     batch_id = 0
     if shuffle:
         c = list(zip(images, labels))
@@ -20,7 +22,7 @@ def generate_arrays_from_file(images, labels, batch_size=32, shuffle=True):
     while 1:
         for i in range(0, len(images)):
             x[batch_id, ...] = images[i]
-            y[batch_id, ...] = keras.utils.to_categorical(labels[i], num_classes=6)
+            y[batch_id, ...] = keras.utils.to_categorical(labels[i], num_classes=5)
             if batch_id == (batch_size - 1):
                 yield (x, y)
                 batch_id = 0
@@ -101,7 +103,7 @@ def inception_resnet_v2():
     #x = AveragePooling2D(pool_size=(9, 9), strides=(1, 1), padding='same')(x)
     x = Dropout(0.2)(x)
     x = Flatten()(x)
-    x = Dense(6)(x)
+    x = Dense(5)(x)
     o = Activation('softmax')(x)
 
     model = Model(inputs=i, outputs=o)
@@ -122,30 +124,45 @@ def load_mean_std(h5_path):
 def load_data():
 
     f = h5py.File("../classes/trainingNeutral.hdf5", 'r')
-    # comme ça je n'ai pas le probleme d'initialiser des tableaux vides.
-    images_training = f['data'][:20000]
-    images_validation = f['data'][48000:60000]
-    annotations_training = f['label_classification'][:20000]
-    annotations_validation = f['label_classification'][48000:60000]
-    f.close()
 
-    #csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger', 'Non_Face']
-    csv_names = ['Neutral', 'Happy', 'Sad']
+    # images_training = f['data'][:48000]
+    # images_validation = f['data'][48000:60000]
+    # annotations_training = f['label_classification'][:48000]
+    # annotations_validation = f['label_classification'][48000:60000]
+    # f.close()
+    #
+    # # csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger', 'Non_Face']
+    # csv_names = ['Neutral', 'Happy', 'Sad']
+    # for csv_name in csv_names[1:]:
+    #     f = h5py.File("../classes/training"+csv_name+".hdf5", 'r')
+    #     print("loading...")
+    #     images_training = np.concatenate([images_training, f['data'][:48000]])
+    #     images_validation = np.concatenate([images_validation, f['data'][48000:60000]])
+    #     annotations_training = np.concatenate([annotations_training, f['label_classification'][:48000]])
+    #     annotations_validation = np.concatenate([annotations_validation, f['label_classification'][48000:60000]])
+    #     print(images_training.shape)
+    #     f.close()
 
-    for csv_name in csv_names[1:]:
+    csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger']
+
+    images_training = np.zeros((6*48000, 49, 49, 3), np.float32)
+    images_validation = np.zeros((6*12000, 49, 49, 3), np.float32)
+    annotations_training = np.zeros((6*48000), np.uint8)
+    annotations_validation = np.zeros((6*12000), np.uint8)
+
+    for i, csv_name in enumerate(csv_names):
+        print(i)
         f = h5py.File("../classes/training"+csv_name+".hdf5", 'r')
-        print("loading...")
-        images_training = np.concatenate([images_training, f['data'][:20000]])
-        images_validation = np.concatenate([images_validation, f['data'][48000:60000]])
-        annotations_training = np.concatenate([annotations_training, f['label_classification'][:20000]])
-        annotations_validation = np.concatenate([annotations_validation, f['label_classification'][48000:60000]])
+        images_training[i*48000:(i+1)*48000] = f['data'][:48000]
+        images_validation[i*12000:(i+1)*12000] = f['data'][48000:60000]
+        annotations_training[i*48000:(i+1)*48000] = np.full((48000), i, dtype=np.uint8)
+        annotations_validation[i*12000:(i+1)*12000] = np.full((12000), i, dtype=np.uint8)
         f.close()
 
-    print(images_training.shape)
-    print(annotations_training.shape)
-    index = np.arange(images_training.shape[0])
-    np.random.shuffle(index)
-    return images_training[index], annotations_training[index], images_validation, annotations_validation
+    # index = np.arange(images_training.shape[0])
+    # np.random.shuffle(index)
+    # return images_training[index], annotations_training[index], images_validation, annotations_validation
+    return images_training, annotations_training, images_validation, annotations_validation
 
 def normalize_image(image):
     return np.divide((image - mean_image), std_image)
@@ -167,7 +184,6 @@ if __name__ == "__main__":
     for i, image in enumerate(images_validation):
         images_validation[i] = normalize_image(image)
 
-
     print('Network...')
     model = inception_resnet_v2()
 
@@ -177,10 +193,10 @@ if __name__ == "__main__":
 
 
     print('Training...')
-
+    tensorboard = keras.callbacks.TensorBoard(log_dir='./logs', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None)
     csv_logger = CSVLogger('irc-cnn.log', append=True)
     checkpointer = ModelCheckpoint(filepath='snapshots/irc-cnn-{epoch:03d}-{val_loss:.6f}.h5', verbose=1, save_best_only=True)
-    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training), int(60000/32), epochs=500, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, shuffle=False), validation_steps=int(36000/32), max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0)
+    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training), int(48000*5/32), epochs=500, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, shuffle=False), validation_steps=int(12000*5/32), max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0)
 
     print('Recording...')
     model.save('irc-cnn.h5')

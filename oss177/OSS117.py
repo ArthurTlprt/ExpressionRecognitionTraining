@@ -4,6 +4,11 @@ from PIL import Image,ImageOps
 import numpy as np
 import h5py
 from random import shuffle as S
+<<<<<<< HEAD
+=======
+import skvideo.io
+import sys
+>>>>>>> 0b010b2c7651b52ad4ac21821ecd54fd79eff1bd
 #import keras
 #from keras.preprocessing import image
 #from keras import backend as K
@@ -26,6 +31,7 @@ for i in range (width):
         a=np_putin2[i][j][0]
         np_putin2[i][j][0]=np_putin2[i][j][2]
         np_putin2[i][j][2]=a
+<<<<<<< HEAD
 #vladTransparencyLeft=[]
 #vladTransparencyRight=[]
 #for i in range(np.shape(np_putin1)[0]):
@@ -40,6 +46,8 @@ for i in range (width):
 #            pass
 #        elif (i>0) and (j>0):
 #            vladTransparencyRight.append([np.shape(np_putin1)[1]-j-1,i])
+=======
+>>>>>>> 0b010b2c7651b52ad4ac21821ecd54fd79eff1bd
 putin_size=200
 
 
@@ -54,6 +62,7 @@ def superpose(frame,image,x,y,TransparencyLeft,TransparencyRight):
                 print(np.shape(frame[x:x+abs(right[0]-left[0])][y:y+i]))
                 print(abs(right[0]-left[0]),y+i)
                 frame[x:x+abs(right[0]-left[0])][y:y+i]=np.flip(image[left[0]:right[0]][1][0:3],0)
+<<<<<<< HEAD
 #______________________________________________________________________________________________________________________________________
 #def superpose(frame,image,x,y): 
 #    width=np.shape(image)[0]
@@ -77,6 +86,8 @@ def superpose(frame,image,x,y,TransparencyLeft,TransparencyRight):
     #              except:pass
 #  return frame
 
+=======
+>>>>>>> 0b010b2c7651b52ad4ac21821ecd54fd79eff1bd
 
 def overlay_image_alpha(img, img_overlay, pos, alpha_mask):
     """Overlay img_overlay on top of img at the position specified by
@@ -104,7 +115,10 @@ def overlay_image_alpha(img, img_overlay, pos, alpha_mask):
 
     alpha = alpha_mask[y1o:y2o, x1o:x2o]
     alpha_inv = 1.0 - alpha
+<<<<<<< HEAD
     #img_overlay=np.flip(img,2)
+=======
+>>>>>>> 0b010b2c7651b52ad4ac21821ecd54fd79eff1bd
     for c in range(channels):
         img[y1:y2, x1:x2, c] = (alpha * img_overlay[y1o:y2o, x1o:x2o, c] +
                                 alpha_inv * img[y1:y2, x1:x2, c])
@@ -136,11 +150,19 @@ while 1:
     faces = face_cascade.detectMultiScale(img, 1.3, 5)
 
     for index,(x,y,w,h) in enumerate(faces):
+<<<<<<< HEAD
        
         np_putin=np.copy(np_putin2)
 
         np_putin=cv2.resize(np_putin,None,fx=w/putin_size,fy=h/putin_size)
         #putin_size*=w/putin_size 
+=======
+
+        np_putin=np.copy(np_putin2)
+
+        np_putin=cv2.resize(np_putin,None,fx=w/putin_size,fy=h/putin_size)
+        #putin_size*=w/putin_size
+>>>>>>> 0b010b2c7651b52ad4ac21821ecd54fd79eff1bd
         t=time.time()
         overlay_image_alpha(img,
                     np_putin[:, :, 0:3],
@@ -157,4 +179,8 @@ while 1:
     #print(t-time.time())
 
 cap.release()
+<<<<<<< HEAD
 cv2.destroyAllWindows()
+=======
+cv2.destroyAllWindows()
+>>>>>>> 0b010b2c7651b52ad4ac21821ecd54fd79eff1bd
