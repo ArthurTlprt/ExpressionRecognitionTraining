@@ -80,6 +80,7 @@ while 1:
     # if a face is found
     listeEmotion=[]
     for index,(x,y,w,h) in enumerate(faces):
+        stillThere=0
         #drawing rectangles
         # subarray corresponding to the face
 
@@ -89,13 +90,15 @@ while 1:
             for i in range(frapsNumber):
                 visages[0][4].append([[0,0,0,0,0]])
         #print(visages)
-
-        for i,visage in enumerate(visages): #si pas de visage au début, on ne passe pas dans la boucle?
-            if abs(x-visage[0])<w/10 and abs(y-visage[1]<h/10):
-                #ceci est un visage qui a été repéré à la frame précédente, on en repère l'index.
-                visageIndex=i
-                #print("on passe dans le if...")
-            else:
+        else:
+            for i,visage in enumerate(visages): #si pas de visage au début, on ne passe pas dans la boucle?
+                if abs(x-visage[0])<w/2 and abs(y-visage[1]<h/2):
+                    #ceci est un visage qui a été repéré à la frame précédente, on en repère l'index.
+                    visageIndex=i
+                    visage[0],visage[1],visage[2],visage[3]=x,y,w,h
+                    #print("on passe dans le if...")
+                    stillThere=1
+            if stillThere==0:
                 #sinon on ajoute le visage:
                 #print("on passe dans le else...")
                 visages.append([x,y,w,h,[],0]) #prediction=visage[4]/index=visage[5]
@@ -137,7 +140,6 @@ while 1:
 
         cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
         
-        
         #print(np_face.shape)
 
         #call le predict
@@ -148,7 +150,7 @@ while 1:
         pil_image = Image.fromarray(img, 'RGB')
         b, g, r = pil_image.split()
         pil_image = Image.merge("RGB", (r, g, b))
-        pil_image.save('savepicture/pict' + str(number) + '.png')
+        pil_image.save('savepicture\pict' + str(number) + '.png')
         number += 1
     img=cv.resize(img,None,fx=1.6,fy=1.6)#imgcv2.resize(img,(2,2))
     cv.imshow('img',img)
