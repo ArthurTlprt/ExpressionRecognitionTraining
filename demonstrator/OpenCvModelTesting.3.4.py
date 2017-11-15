@@ -159,7 +159,7 @@ while 1:
                 break
 
 
-        np_face = img[y:y+h, x:x+w]     
+        np_face = img[y:y+h, x:x+w]
 
         # converting into PIL.Image object to resize
         pil_face = Image.fromarray(np_face, 'RGB')
@@ -177,7 +177,7 @@ while 1:
 
         visages[visageIndex][4][visages[visageIndex][5]]=preds
         if visages[visageIndex][5]==(frapsNumber-1):
-            visages[visageIndex][5]=0    
+            visages[visageIndex][5]=0
         else: visages[visageIndex][5]+=1
         for prediction in visages[visageIndex][4]:
             predsSum=predsSum+prediction
@@ -190,7 +190,7 @@ while 1:
         #print(listeEmotion)
 
         cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
-        
+
         #print(np_face.shape)
 
         #call le predict
@@ -223,7 +223,7 @@ while 1:
                         np_flash[:, :, 3] / 255.0)
     elif(testTousHappy(listeEmotion)==False):
         time_tampon=0
-        
+
     if flash!=0:
         flash=flash-1
         overlay_image_alpha(img,
@@ -239,4 +239,4 @@ while 1:
     #print(t-time.time())
 
 cap.release()
-cv.destroyAllWindows()  
+cv.destroyAllWindows()
