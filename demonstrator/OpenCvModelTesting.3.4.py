@@ -134,7 +134,7 @@ time_tampon=0
 
 
 np_flash=np.zeros((height,width, 4),dtype=np.uint8)+255
-print(np_flash)
+
 # we read the cam indefinitely
 while 1:
 
