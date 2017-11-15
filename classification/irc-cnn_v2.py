@@ -15,12 +15,13 @@ def generate_arrays_from_file(images, labels, batch_size=32, shuffle=True):
     x = np.zeros((batch_size, 49, 49, 3))
     y = np.zeros((batch_size, 5))
     batch_id = 0
+    idx = np.arange(0, len(images))
     if shuffle:
-        c = list(zip(images, labels))
-        S(c)
-        images, labels = zip(*c)
+        #c = list(zip(images, labels))
+        S(idx)
+        #images, labels = zip(*c)
     while 1:
-        for i in range(0, len(images)):
+        for i in idx:
             x[batch_id, ...] = images[i]
             y[batch_id, ...] = keras.utils.to_categorical(labels[i], num_classes=5)
             if batch_id == (batch_size - 1):
@@ -214,16 +215,16 @@ def load_mean_std(h5_path):
 
 def load_data():
 
-    f = h5py.File("../classes/trainingNeutral.hdf5", 'r')
+    #f = h5py.File("../classescop/shuffled/trainingNeutral.hdf5", 'r')
 
 
 
     csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger']
 
-    images_training = np.zeros((6*48000, 49, 49, 3), np.float32)
-    images_validation = np.zeros((6*12000, 49, 49, 3), np.float32)
-    annotations_training = np.zeros((6*48000), np.uint8)
-    annotations_validation = np.zeros((6*12000), np.uint8)
+    images_training = np.zeros((5*48000, 49, 49, 3), np.float32)
+    images_validation = np.zeros((5*12000, 49, 49, 3), np.float32)
+    annotations_training = np.zeros((5*48000), np.uint8)
+    annotations_validation = np.zeros((5*12000), np.uint8)
 
     for i, csv_name in enumerate(csv_names):
         print(i)

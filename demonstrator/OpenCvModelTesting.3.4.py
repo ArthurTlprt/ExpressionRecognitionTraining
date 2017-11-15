@@ -1,6 +1,7 @@
 import numpy as np
 import cv2 as cv
 from PIL import Image,ImageOps
+
 import numpy as np
 import h5py
 from random import shuffle as S
@@ -17,7 +18,10 @@ import time
 
 mean_image = image.img_to_array(image.load_img("mean_image.png",target_size=(49,49)))
 std_image = image.img_to_array(image.load_img("std_image.png",target_size=(49,49)))
-
+flash_image=Image.open("flash.png")
+np_flash_image=np.asarray(flash_image, dtype=np.uint8)
+np_flash=np.copy(np_flash_image)
+#print(np.shape(np_flash))
 #0: Neutral, 1: Happiness, 2: Sadness, 3: Surprise, 4: Fear, 5: Disgust, 6: Anger,7: Contempt, 8: None, 9: Uncertain, 10: No-Face
 def normalize(image,mean_image,std_image):
     return np.divide((image-mean_image),std_image)
@@ -41,6 +45,38 @@ def superpose(frame,image,x,y): #arrays en parametres.
     frame[x:x+width,y:y+height]=image #[0:width, 0:height,0:3]
     return frame
 
+def overlay_image_alpha(img, img_overlay, pos, alpha_mask):
+    """Overlay img_overlay on top of img at the position specified by
+    pos and blend using alpha_mask.
+
+    Alpha mask must contain values within the range [0, 1] and be the
+    same size as img_overlay.
+    """
+
+    x, y = pos
+
+    # Image ranges
+    y1, y2 = max(0, y), min(img.shape[0], y + img_overlay.shape[0])
+    x1, x2 = max(0, x), min(img.shape[1], x + img_overlay.shape[1])
+
+    # Overlay ranges
+    y1o, y2o = max(0, -y), min(img_overlay.shape[0], img.shape[0] - y)
+    x1o, x2o = max(0, -x), min(img_overlay.shape[1], img.shape[1] - x)
+
+    # Exit if nothing to do
+    if y1 >= y2 or x1 >= x2 or y1o >= y2o or x1o >= x2o:
+        return
+
+    channels = img.shape[2]
+
+    alpha = alpha_mask[y1o:y2o, x1o:x2o]
+    alpha_inv = 1.0 - alpha
+    #img_overlay=np.flip(img,2)
+    for c in range(channels):
+        img[y1:y2, x1:x2, c] = (alpha * img_overlay[y1o:y2o, x1o:x2o, c] +
+                                alpha_inv * img[y1:y2, x1:x2, c])
+
+
 def testTousHappy(liste):
     bool=True
     if(len(liste)==0):
@@ -50,6 +86,11 @@ def testTousHappy(liste):
             bool=False
     return bool
 
+def traitement_logo(directory, listeChiffre, listeFin):
+    for i in range(3):
+        image= Image.open( directory+listeChiffre[i])
+        np_image=np.asarray(image, dtype=np.uint8)
+        listeFin.append(np_image)
 
 log= open('log.txt', 'w')
 model=load_model('irc-cnn-009-0.642313.h5')
@@ -68,6 +109,16 @@ visageIndex=0
 cap = cv.VideoCapture(0)
 lastpicture=time.time()
 number=0
+
+flash=0 #variable suivant le nombre de frame du flash.
+
+#variables servant au timer de 3 secondes
+chiffreDirectory="images_chiffre/"
+listeLogo=["3.png", "2.png", "1.png"]
+liste_npChiffre=[]
+traitement_logo(chiffreDirectory, listeLogo, liste_npChiffre)
+time_tampon=0
+
 # we read the cam indefinitely
 while 1:
 
@@ -146,13 +197,40 @@ while 1:
 
     timepicture = time.time()
     if ((testTousHappy(listeEmotion)) & (timepicture - lastpicture > 5)):
-        lastpicture = timepicture
-        pil_image = Image.fromarray(img, 'RGB')
-        b, g, r = pil_image.split()
-        pil_image = Image.merge("RGB", (r, g, b))
-        pil_image.save('savepicture\pict' + str(number) + '.png')
-        number += 1
-    img=cv.resize(img,None,fx=1.6,fy=1.6)#imgcv2.resize(img,(2,2))
+        if(time_tampon==0):
+            time_tampon=time.time()
+        if(time.time()-time_tampon<1):
+            overlay_image_alpha(img, liste_npChiffre[0][:,:,:3], (250,250),liste_npChiffre[0][:,:,3]/255.0 )
+            #superpose(img, liste_npChiffre[0], 0,0)
+        elif((time.time()-time_tampon>1) & (time.time()-time_tampon<2) ):
+            overlay_image_alpha(img, liste_npChiffre[1][:,:,:3], (250,250),liste_npChiffre[1][:,:,3]/255.0 )
+            #superpose(img, liste_npChiffre[1], 0, 0)
+        elif((time.time() -time_tampon> 2) & (time.time()-time_tampon< 3)):
+            overlay_image_alpha(img, liste_npChiffre[2][:, :, :3], (250, 250), liste_npChiffre[2][:, :, 3] / 255.0)
+            #superpose(img, liste_npChiffre[2], 0, 0)
+        elif(time.time()-time_tampon> 3):
+            lastpicture = timepicture
+            pil_image = Image.fromarray(img, 'RGB')
+            b, g, r = pil_image.split()
+            pil_image = Image.merge("RGB", (r, g, b))
+            pil_image.save('savepicture\pict' + str(number) + '.png')
+            number += 1
+            time_tampon=0
+            flash=3
+            overlay_image_alpha(img,
+                        np_flash[:, :, 0:3],
+                        (0,0),
+                        np_flash[:, :, 3] / 255.0)
+    elif(testTousHappy(listeEmotion)==False):
+        time_tampon=0
+        
+    if flash!=0:
+        flash=flash-1
+        overlay_image_alpha(img,
+                    np_flash[:, :, 0:3],
+                    (0,0),
+                    np_flash[:, :, 3] / 255.00+flash/3  )
+    #img=cv.resize(img,None,fx=1.6,fy=1.6)#imgcv2.resize(img,(2,2))
     cv.imshow('img',img)
     # kill with ctr+c
     k = cv.waitKey(30) & 0xff
@@ -161,4 +239,4 @@ while 1:
     #print(t-time.time())
 
 cap.release()
-cv.destroyAllWindows()
+cv.destroyAllWindows()  
