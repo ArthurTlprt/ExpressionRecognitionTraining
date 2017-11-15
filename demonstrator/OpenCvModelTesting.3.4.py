@@ -19,9 +19,7 @@ import time
 mean_image = image.img_to_array(image.load_img("mean_image.png",target_size=(49,49)))
 std_image = image.img_to_array(image.load_img("std_image.png",target_size=(49,49)))
 flash_image=Image.open("flash.png")
-np_flash_image=np.asarray(flash_image, dtype=np.uint8)
-np_flash=np.copy(np_flash_image)
-#print(np.shape(np_flash))
+
 #0: Neutral, 1: Happiness, 2: Sadness, 3: Surprise, 4: Fear, 5: Disgust, 6: Anger,7: Contempt, 8: None, 9: Uncertain, 10: No-Face
 def normalize(image,mean_image,std_image):
     return np.divide((image-mean_image),std_image)
@@ -105,8 +103,23 @@ visages=[]
 predsSum=[[0,0,0,0,0]]
 visageIndex=0
 
-#camera initilization (default cam is 0)
-cap = cv.VideoCapture(0)
+#camera initilization (default cam is 0, 1 for USB camera)
+#cap = cv.VideoCapture(0)
+try:
+    cap = cv.VideoCapture(1)
+    cap.set(cv.CAP_PROP_FRAME_WIDTH,1280)#sets the resolution; for the hd cam.
+    cap.set(cv.CAP_PROP_FRAME_HEIGHT,720)
+    ret, img = cap.read()
+    img=cv.flip(img,1)
+    width=np.shape(img)[1]
+    height =np.shape(img)[0]
+except:
+    cap = cv.VideoCapture(0)
+    ret, img = cap.read()
+    img=cv.flip(img,1)
+    width=np.shape(img)[1]
+    height =np.shape(img)[0]
+
 lastpicture=time.time()
 number=0
 
@@ -118,6 +131,9 @@ listeLogo=["3.png", "2.png", "1.png"]
 liste_npChiffre=[]
 traitement_logo(chiffreDirectory, listeLogo, liste_npChiffre)
 time_tampon=0
+
+
+np_flash=np.zeros((height,width, 4),dtype=np.uint8)+255
 
 # we read the cam indefinitely
 while 1:
@@ -200,13 +216,13 @@ while 1:
         if(time_tampon==0):
             time_tampon=time.time()
         if(time.time()-time_tampon<1):
-            overlay_image_alpha(img, liste_npChiffre[0][:,:,:3], (250,250),liste_npChiffre[0][:,:,3]/255.0 )
+            overlay_image_alpha(img, liste_npChiffre[0][:,:,:3], (int(width/2),int(height/2)),liste_npChiffre[0][:,:,3]/255.0 )
             #superpose(img, liste_npChiffre[0], 0,0)
         elif((time.time()-time_tampon>1) & (time.time()-time_tampon<2) ):
-            overlay_image_alpha(img, liste_npChiffre[1][:,:,:3], (250,250),liste_npChiffre[1][:,:,3]/255.0 )
+            overlay_image_alpha(img, liste_npChiffre[1][:,:,:3], (int(width/2),int(height/2)),liste_npChiffre[1][:,:,3]/255.0 )
             #superpose(img, liste_npChiffre[1], 0, 0)
         elif((time.time() -time_tampon> 2) & (time.time()-time_tampon< 3)):
-            overlay_image_alpha(img, liste_npChiffre[2][:, :, :3], (250, 250), liste_npChiffre[2][:, :, 3] / 255.0)
+            overlay_image_alpha(img, liste_npChiffre[2][:, :, :3], (int(width/2),int(height/2)), liste_npChiffre[2][:, :, 3] / 255.0)
             #superpose(img, liste_npChiffre[2], 0, 0)
         elif(time.time()-time_tampon> 3):
             lastpicture = timepicture
