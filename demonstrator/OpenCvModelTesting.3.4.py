@@ -18,7 +18,7 @@ import time
 
 mean_image = image.img_to_array(image.load_img("mean_image.png",target_size=(49,49)))
 std_image = image.img_to_array(image.load_img("std_image.png",target_size=(49,49)))
-flash_image=Image.open("flash.png")
+
 
 #0: Neutral, 1: Happiness, 2: Sadness, 3: Surprise, 4: Fear, 5: Disgust, 6: Anger,7: Contempt, 8: None, 9: Uncertain, 10: No-Face
 def normalize(image,mean_image,std_image):
@@ -134,7 +134,7 @@ time_tampon=0
 
 
 np_flash=np.zeros((height,width, 4),dtype=np.uint8)+255
-
+print(np_flash)
 # we read the cam indefinitely
 while 1:
 
