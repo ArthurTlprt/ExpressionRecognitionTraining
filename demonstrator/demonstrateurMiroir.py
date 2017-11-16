@@ -12,14 +12,22 @@ from keras.layers import Conv2D, BatchNormalization, Activation, Lambda, MaxPool
 from keras import optimizers
 from keras.callbacks import ModelCheckpoint, CSVLogger
 import time
-import webbrowser
+
+#import webbrowser
 #tentative d'implémenter une moyenne sur les prédictions pour tous les visages.
 
 mean_image = image.img_to_array(image.load_img("mean_image.png",target_size=(49,49)))
 std_image = image.img_to_array(image.load_img("std_image.png",target_size=(49,49)))
 
-url='http://localhost:8080/'
-webbrowser.open(url,new=0)
+
+from selenium import webdriver
+
+
+driver = webdriver.Chrome(executable_path=r"chromedriver.exe")
+
+
+#url='http://localhost:8080/happy'
+#webbrowser.open(url,new=0)
 #0: Neutral, 1: Happiness, 2: Sadness, 3: Surprise, 4: Fear, 5: Disgust, 6: Anger,7: Contempt, 8: None, 9: Uncertain, 10: No-Face
 def normalize(image,mean_image,std_image):
     return np.divide((image-mean_image),std_image)
@@ -32,6 +40,7 @@ def showFineResults(preds):
         if preds[0][i]>msp:
             msp=preds[0][i]
             index=i
+    #webbrowser.open('http://localhost:8080/'+L[index],new=1)
     return(L[index])
 
 def superpose(frame,image,x,y): #arrays en parametres.
@@ -46,7 +55,7 @@ model=load_model('irc-cnn-009-0.642313.h5')
 # download this file as face.xml
 #https://github.com/Itseez/opencv/blob/master/data/haarcascades/haarcascade_frontalface_default.xml
 face_cascade = cv2.CascadeClassifier('face.xml')
-frapsNumber=5 #
+frameNumber=5 #
 #predictions=[]
 visages=[]
 predsSum=[[0,0,0,0,0]]
@@ -66,11 +75,13 @@ while 1:
     faces = face_cascade.detectMultiScale(img, 1.3, 5)
     #print(faces)
     # if a face is found
+    if faces==():
+        driver.get('http://localhost:8080/')
     for index,(x,y,w,h) in enumerate(faces):
         if visages==[]:
             visages.append([x,y,w,h,[],0]) #prediction=visage[4]/index=visage[5]
             visageIndex=len(visages)-1
-            for i in range(frapsNumber):
+            for i in range(frameNumber):
                 visages[0][4].append([[0,0,0,0,0]])
         #print(visages)
 
@@ -84,7 +95,7 @@ while 1:
                 #print("on passe dans le else...")
                 visages.append([x,y,w,h,[],0]) #prediction=visage[4]/index=visage[5]
                 visageIndex=len(visages)-1
-                for j in range(frapsNumber):
+                for j in range(frameNumber):
                     visages[len(visages)-1][4].append([[0,0,0,0,0]])
                 break
         #print (len(visages))
@@ -105,15 +116,16 @@ while 1:
         preds= model.predict(normalize(np_face,mean_image,std_image))
 
         visages[visageIndex][4][visages[visageIndex][5]]=preds
-        if visages[visageIndex][5]==(frapsNumber-1):
+        if visages[visageIndex][5]==(frameNumber-1):
             visages[visageIndex][5]=0    
         else: visages[visageIndex][5]+=1
         for prediction in visages[visageIndex][4]:
             predsSum=predsSum+prediction
-        predsMean=predsSum/frapsNumber
+        predsMean=predsSum/frameNumber
         #print (predsMean)
         predsSum=[[0,0,0,0,0]]
         cv2.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv2.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
+        driver.get('http://localhost:8080/'+showFineResults(predsMean))
         #print(visageIndex)
 
     img=cv2.resize(img,None,fx=1.6,fy=1.6)
