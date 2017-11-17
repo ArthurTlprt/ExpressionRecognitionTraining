@@ -34,7 +34,7 @@ def normalize(image,mean_image,std_image):
 
 def showFineResults(preds):
     L=["Neutral","Happiness", "Sadness", "Surprise", "Anger"]
-    msp=np.float32(0)   
+    msp=np.float32(0)
     index=0
     for i in range(5):
         if preds[0][i]>msp:
@@ -102,7 +102,7 @@ while 1:
         #drawing rectangles
         cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
         # subarray corresponding to the face
-        np_face = img[y:y+h, x:x+w]     
+        np_face = img[y:y+h, x:x+w]
         pil_face = Image.fromarray(np_face, 'RGB')
         pil_face = pil_face.resize((49, 49), resample=Image.BILINEAR)
 
@@ -117,7 +117,7 @@ while 1:
 
         visages[visageIndex][4][visages[visageIndex][5]]=preds
         if visages[visageIndex][5]==(frameNumber-1):
-            visages[visageIndex][5]=0    
+            visages[visageIndex][5]=0
         else: visages[visageIndex][5]+=1
         for prediction in visages[visageIndex][4]:
             predsSum=predsSum+prediction

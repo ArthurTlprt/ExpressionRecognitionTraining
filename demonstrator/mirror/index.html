@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Mirror</title>
+    <style>
+      body {
+        background-color: black;
+        color: white;
+      }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+    var socket = io();
+    socket.on('new', function(feelings){
+      console.log("new feeling received: ");
+      console.log(feelings)
+    })
+    </script>
+  </head>
+  <body>
+    <p>Mirror, my beatiful mirror...</p>
+  </body>
+</html>
