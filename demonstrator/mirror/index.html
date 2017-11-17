@@ -9,15 +9,23 @@
       }
     </style>
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-    var socket = io();
-    socket.on('new', function(feelings){
-      console.log("new feeling received: ");
-      console.log(feelings)
-    })
-    </script>
   </head>
   <body>
+    <div id="center">
+
+    </div>
     <p>Mirror, my beatiful mirror...</p>
   </body>
+  <script>
+  var socket = io();
+  socket.on('new', function(feelings){
+    console.log("new feeling received: ");
+    console.log(feelings)
+    feelings.forEach(function(feeling) {
+      var elem = document.createElement("img");
+      elem.src = 'emoji/'+feeling+'.png';
+      document.getElementById('center').appendChild(elem)
+    })
+  })
+  </script>
 </html>
