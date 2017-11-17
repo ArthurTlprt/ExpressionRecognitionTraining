@@ -10,7 +10,6 @@ io.on('connection', function(socket) {
   socket.on('new feeling', function(feelings) {
     socket.broadcast.emit('new', feelings);
     console.log(feelings)
-    console.log("pouet");
   })
 });
 

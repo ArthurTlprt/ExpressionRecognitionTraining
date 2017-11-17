@@ -10,20 +10,18 @@ from keras import backend as K
 from keras.models import Sequential, load_model
 from keras.layers import Conv2D, BatchNormalization, Activation, Lambda, MaxPooling2D, Flatten, Dense, Dropout
 from keras import optimizers
-from keras.callbacks import ModelCheckpoint, CSVLogger
 import time
+from socketIO_client import SocketIO, LoggingNamespace
 
+print("fin des imports")
+s = SocketIO('localhost', 3000, LoggingNamespace)
+print("un peu long comme instruction...")
 #import webbrowser
 #tentative d'implémenter une moyenne sur les prédictions pour tous les visages.
 
 mean_image = image.img_to_array(image.load_img("mean_image.png",target_size=(49,49)))
 std_image = image.img_to_array(image.load_img("std_image.png",target_size=(49,49)))
 
-
-from selenium import webdriver
-
-
-driver = webdriver.Chrome(executable_path=r"chromedriver.exe")
 
 
 #url='http://localhost:8080/happy'
@@ -40,7 +38,6 @@ def showFineResults(preds):
         if preds[0][i]>msp:
             msp=preds[0][i]
             index=i
-    #webbrowser.open('http://localhost:8080/'+L[index],new=1)
     return(L[index])
 
 def superpose(frame,image,x,y): #arrays en parametres.
@@ -65,21 +62,20 @@ cap = cv2.VideoCapture(0)
 # we read the cam indefinitely
 
 
+print("dans la boucle while:")
 while 1:
     t=time.time()
     ret, img = cap.read()
     img=cv2.flip(img,1)
-
+    feelings=[]
 
     # find the face
     faces = face_cascade.detectMultiScale(img, 1.3, 5)
-    #print(faces)
-    # if a face is found
-    if faces==():
-        driver.get('http://localhost:8080/')
+
+
     for index,(x,y,w,h) in enumerate(faces):
         if visages==[]:
-            visages.append([x,y,w,h,[],0]) #prediction=visage[4]/index=visage[5]
+            visages.append([x,y,w,h,[],0])
             visageIndex=len(visages)-1
             for i in range(frameNumber):
                 visages[0][4].append([[0,0,0,0,0]])
@@ -125,12 +121,12 @@ while 1:
         #print (predsMean)
         predsSum=[[0,0,0,0,0]]
         cv2.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv2.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
-        driver.get('http://localhost:8080/'+showFineResults(predsMean))
+        feelings.append(showFineResults(predsMean))
         #print(visageIndex)
 
     img=cv2.resize(img,None,fx=1.6,fy=1.6)
     cv2.imshow('img',img)
-
+    s.emit('new feeling',  feelings)
     k = cv2.waitKey(30) & 0xff
     if k == 27:
         break
