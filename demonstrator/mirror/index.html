@@ -6,6 +6,15 @@
       body {
         background-color: black;
         color: white;
+        margin-top: 70%;
+
+      }
+      div{margin-top: 10%;
+        text-align: center;}
+      p
+      {
+        text-align: center;
+        
       }
     </style>
     <script src="/socket.io/socket.io.js"></script>
@@ -14,17 +23,19 @@
     <div id="center">
 
     </div>
-    <p>Mirror, my beatiful mirror...</p>
+
   </body>
   <script>
   var socket = io();
   socket.on('new', function(feelings){
     console.log("new feeling received: ");
     console.log(feelings)
+    document.getElementById('center').innerHTML = '';
     feelings.forEach(function(feeling) {
       var elem = document.createElement("img");
       elem.src = 'emoji/'+feeling+'.png';
       document.getElementById('center').appendChild(elem)
+
     })
   })
   </script>
