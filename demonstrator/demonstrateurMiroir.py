@@ -58,7 +58,20 @@ visages=[]
 predsSum=[[0,0,0,0,0]]
 visageIndex=0
 #camera initilization (default cam is 0)
-cap = cv2.VideoCapture(0)
+try:
+    cap = cv2.VideoCapture(1)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH,1280)#sets the resolution; for the hd cam.
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT,720)
+    ret, img = cap.read()
+    img=cv2.flip(img,1)
+    width=np.shape(img)[1]
+    height =np.shape(img)[0]
+except:
+    cap = cv2.VideoCapture(0)
+    ret, img = cap.read()
+    img=cv2.flip(img,1)
+    width=np.shape(img)[1]
+    height =np.shape(img)[0]
 # we read the cam indefinitely
 
 
