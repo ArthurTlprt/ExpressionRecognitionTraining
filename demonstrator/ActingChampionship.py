@@ -139,9 +139,13 @@ traitement_logo(chiffreDirectory, listeLogo, liste_npChiffre)
 time_tampon = 0
 
 np_flash = np.zeros((height, width, 4), dtype=np.uint8) + 255
-
+nbJoueur=int(input("Entrer le nombre de joueur"))
+nbManche=int(input("Entrer le nombre de manche pour cette partie:"))
+listeScore=[]
 # we read the cam indefinitely
+for manche in range(nbManche):
 while 1:
+
 
     ret, img = cap.read()
     img = cv.flip(img, 1)

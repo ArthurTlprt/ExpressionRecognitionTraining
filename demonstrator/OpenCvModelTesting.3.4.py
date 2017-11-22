@@ -145,6 +145,22 @@ def prediction(np_face,mean_image,std_image,visages,visageIndex,frameNumber):
     predsMean=predsSum/frameNumber
 
     return predsMean
+
+def traitement_generique(directory, listeChiffre, listeFin, width, height):
+    for i in range(3):
+        image= Image.open( directory+listeChiffre[i])
+        image=image.resize((width,height), resample=Image.BILINEAR)
+        np_image=np.asarray(image, dtype=np.uint8)
+        tampon=np.copy(np_image)
+        np_image=tampon
+        for i in range (height):
+            for j in range (width):
+                a=np_image[i][j][0]
+                np_image[i][j][0]=np_image[i][j][2]
+                np_image[i][j][2]=a
+
+        listeFin.append(np_image)
+
 #________________________________________________________Initialisation des variables______________________________________________________________
 mean_image = image.img_to_array(image.load_img("mean_image.png",target_size=(49,49)))#on charge l'image moyenne et l'écart type (pour la normalisation)
 std_image = image.img_to_array(image.load_img("std_image.png",target_size=(49,49)))
@@ -178,8 +194,13 @@ flash=0 #pour le flash: ça fonctionne comme une "fondue" d'une image blanche su
 chiffreDirectory="images_chiffre/"
 listeLogo=["3.png", "2.png", "1.png"]
 liste_npChiffre=[]
+generiqueDirectory="imagestexte/"
+listeGenerique=["Bonjour!.png", "CeMiroirDévoileVosEmotions.png", "Souriez!.png"]
+liste_npGenerique=[]
+traitement_generique(generiqueDirectory, listeGenerique, liste_npGenerique, width, height)
 traitement_logo(chiffreDirectory, listeLogo, liste_npChiffre) #charge les images, les prend 
 time_tampon=0
+tempsDebut=time.time()
 #création de la matrice blanche servant de flash lors de la prise de photographie.
 np_flash=np.zeros((height,width, 4),dtype=np.uint8)+255
 
@@ -187,37 +208,44 @@ np_flash=np.zeros((height,width, 4),dtype=np.uint8)+255
 while 1:
     #récupération des images de la caméra
     ret, img = cap.read()
-    img=cv.flip(img,1) 
+    img=cv.flip(img,1)
+    tempsActuel=time.time()
+    if(tempsActuel-tempsDebut<3):
+        overlay_image_alpha(img, liste_npGenerique[0][:, :, :3], (0, 0),
+                            liste_npGenerique[0][:, :, 3] / 255.0)
+    elif ((tempsActuel - tempsDebut > 3) & (tempsActuel - tempsDebut <=7)):
+        overlay_image_alpha(img, liste_npGenerique[2][:, :, :3], (0, 0),
+                            liste_npGenerique[2][:, :, 3] / 255.0)
+    else:
+        #liste contenant les émotion de tous les visages sur l'image, si tout le monde est joyeux: on prend la photo.
+        listeEmotion=[]
+        # find the face
+        faces = face_cascade.detectMultiScale(img, 1.3, 5)
+        # On parcourt la liste des visages (elle contient sa position en x, y , sa largeur w et sa hauteur h)
+        for index,(x,y,w,h) in enumerate(faces):
+            #on repère les differents visages, fonction de leur position.
+            visages, visageIndex = lissage(visages, visageIndex, frameNumber,x,y,w,h)
 
-    #liste contenant les émotion de tous les visages sur l'image, si tout le monde est joyeux: on prend la photo.
-    listeEmotion=[]
-    # find the face
-    faces = face_cascade.detectMultiScale(img, 1.3, 5)
-    # On parcourt la liste des visages (elle contient sa position en x, y , sa largeur w et sa hauteur h)
-    for index,(x,y,w,h) in enumerate(faces):
-        #on repère les differents visages, fonction de leur position.
-        visages, visageIndex = lissage(visages, visageIndex, frameNumber,x,y,w,h)
+            #on crop l'image autour des visages.
+            np_face = img[y:y+h, x:x+w]
+            # converting into PIL.Image object to resize
+            pil_face = Image.fromarray(np_face, 'RGB')
+            pil_face = pil_face.resize((49, 49), resample=Image.BILINEAR)
 
-        #on crop l'image autour des visages.
-        np_face = img[y:y+h, x:x+w]
-        # converting into PIL.Image object to resize
-        pil_face = Image.fromarray(np_face, 'RGB')
-        pil_face = pil_face.resize((49, 49), resample=Image.BILINEAR)
-
-        # remettre tout en np.array
-        np_face = np.flip(np.asarray(pil_face, dtype=np.uint8),2)
-        superpose(img,np_face,0,49*index)
-
-        
-        #prediction
-        predsMean=prediction(np_face,mean_image,std_image,visages,visageIndex,frameNumber)
-        cv.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
-        listeEmotion.append(showFineResults(predsMean))
+            # remettre tout en np.array
+            np_face = np.flip(np.asarray(pil_face, dtype=np.uint8),2)
+            superpose(img,np_face,0,49*index)
 
 
-        cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
-        #on prend la photo.
-        number,flash,lastpicture,time_tampon=photo(img,width,height,np_flash,listeEmotion,liste_npChiffre,lastpicture,time_tampon,number,flash)       
+            #prediction
+            predsMean=prediction(np_face,mean_image,std_image,visages,visageIndex,frameNumber)
+            cv.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
+            listeEmotion.append(showFineResults(predsMean))
+
+
+            cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
+            #on prend la photo.
+            number,flash,lastpicture,time_tampon=photo(img,width,height,np_flash,listeEmotion,liste_npChiffre,lastpicture,time_tampon,number,flash)
 
     cv.imshow('img',img)
 
