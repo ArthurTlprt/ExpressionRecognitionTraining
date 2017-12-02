@@ -1,7 +1,6 @@
 import numpy as np
 import cv2 as cv
 from PIL import Image
-import numpy as np
 import h5py
 from random import shuffle as S
 from keras.preprocessing import image
@@ -92,7 +91,7 @@ def lissage(visages,visageIndex,frameNumber,x,y,w,h):
                 visages[len(visages)-1][4].append([[0,0,0,0,0]])
     return visages, visageIndex
 
-def photo(img,width,height,np_flash,listeEmotion,liste_npChiffre,lastpicture,time_tampon,number,flash): #on afficher le timer, puis si 3 secondes se sont passées avec le sourire, on prend la photo.
+def photo(img,width,height,np_flash,listeEmotion,liste_npChiffre,lastpicture,time_tampon,number,flash): #on affiche le timer, puis si 3 secondes se sont passées avec le sourire, on prend la photo.
     timepicture = time.time()
     if ((testTousHappy(listeEmotion)) & (timepicture - lastpicture > 5)):
         if(time_tampon==0):
@@ -241,12 +240,9 @@ while 1:
             predsMean=prediction(np_face,mean_image,std_image,visages,visageIndex,frameNumber)
             cv.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
             listeEmotion.append(showFineResults(predsMean))
-
-
             cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
             #on prend la photo.
-            number,flash,lastpicture,time_tampon=photo(img,width,height,np_flash,listeEmotion,liste_npChiffre,lastpicture,time_tampon,number,flash)
-
+        number,flash,lastpicture,time_tampon=photo(img,width,height,np_flash,listeEmotion,liste_npChiffre,lastpicture,time_tampon,number,flash)
     cv.imshow('img',img)
 
 
