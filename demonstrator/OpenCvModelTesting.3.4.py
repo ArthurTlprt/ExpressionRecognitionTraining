@@ -169,7 +169,7 @@ model=load_model('irc-cnn-009-0.642313.h5') #on charge le modèle
 face_cascade = cv.CascadeClassifier('face.xml') #on charge le modèle open_cv qui détecte les visages.
 #camera initilization (dans l'ordre des périphériques de type "caméra", on privilégie les caméras branchées.)
 try:
-    cap = cv.VideoCapture(1) 
+    cap = cv.VideoCapture(1)
     cap.set(cv.CAP_PROP_FRAME_WIDTH,1280)#sets the resolution; for the hd cam.
     cap.set(cv.CAP_PROP_FRAME_HEIGHT,720)
     ret, img = cap.read()
@@ -198,7 +198,7 @@ generiqueDirectory="imagestexte/"
 listeGenerique=["Bonjour!.png", "CeMiroirDévoileVosEmotions.png", "Souriez!.png"]
 liste_npGenerique=[]
 traitement_generique(generiqueDirectory, listeGenerique, liste_npGenerique, width, height)
-traitement_logo(chiffreDirectory, listeLogo, liste_npChiffre) #charge les images, les prend 
+traitement_logo(chiffreDirectory, listeLogo, liste_npChiffre) #charge les images, les prend
 time_tampon=0
 tempsDebut=time.time()
 #création de la matrice blanche servant de flash lors de la prise de photographie.
