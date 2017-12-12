@@ -1,6 +1,6 @@
 import numpy as np
 import cv2 as cv
-from PIL import Image
+from PIL import ImageFont, ImageDraw, Image
 import h5py
 from random import shuffle as S
 from keras.preprocessing import image
@@ -8,6 +8,14 @@ from keras.models import  load_model
 import time
 
 #______________________________________________________________________fonctions________________________________________________________________________________
+
+feelings_to_colors = np.array(
+    [[100, 100, 100],
+    [0, 120, 120],
+    [0, 0, 0],
+    [120, 120, 0],
+    [250, 0, 0]], dtype='uint8')
+
 
 def normalize(image,mean_image,std_image): #normalise l'image des visages avant la prédiction pour coincider avec le modèle.
     return np.divide((image-mean_image),std_image)
@@ -166,7 +174,17 @@ def traitement_generique(directory, listeChiffre, listeFin, width, height):
                 np_image[i][j][2]=a
 
         listeFin.append(np_image)
-
+def write(xy, img, text, color):
+    cv2_im_rgb = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+    # Pass the image to PIL
+    pil_im = Image.fromarray(cv2_im_rgb)
+    draw = ImageDraw.Draw(pil_im)
+    # use a truetype font
+    font = ImageFont.truetype("fonts/Sansation_Regular.ttf", 80)
+    # Draw the text
+    draw.text(xy, text, font=font, fill=color)
+    img= cv.cvtColor(np.array(pil_im), cv.COLOR_RGB2BGR)
+    return img
 #________________________________________________________Initialisation des variables______________________________________________________________
 mean_image = image.img_to_array(image.load_img("mean_image.png",target_size=(49,49)))#on charge l'image moyenne et l'écart type (pour la normalisation)
 std_image = image.img_to_array(image.load_img("std_image.png",target_size=(49,49)))
@@ -241,23 +259,17 @@ while 1:
             # remettre tout en np.array
             np_face = np.flip(np.asarray(pil_face, dtype=np.uint8),2)
             superpose(img,np_face,0,49*index)
-
-
             #prediction
             predsMean=prediction(np_face,mean_image,std_image,visages,visageIndex,frameNumber)
-            cv.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
+            color = np.dot(predsMean[0], feelings_to_colors)
+            color = color.astype(int).tolist()
+            print(type(color))
+            color = (color[1], color[0], color[2])
+            cv.rectangle(img,(x,y), (x+w,y+h), color,2)
             listeEmotion.append(showFineResults(predsMean))
-            if(showFineResults(predsMean)=="Happiness"):
-                cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (int(100-maxpred(predsMean)*100),255,255),2)
-                print(int(100-maxpred(predsMean)*100))
-            elif(showFineResults(predsMean)=="Sadness"):
-                cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (255,int(119-maxpred(predsMean)*119),int(119-maxpred(predsMean)*119)),2)
-            elif(showFineResults(predsMean)=="Anger"):
-                cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (int(66-maxpred(predsMean)*66),255,int(66-maxpred(predsMean)*66)),2)
-            elif(showFineResults(predsMean)=="Surprise"):
-                cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (255,255,int(100-maxpred(predsMean)*100)),2)
-            elif(showFineResults(predsMean)=="Neutral"):
-                cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (0,0,0),2)#on prend la photo.
+
+            img = write((x,y), img, showFineResults(predsMean), color)
+
         number,flash,lastpicture,time_tampon=photo(img,width,height,np_flash,listeEmotion,liste_npChiffre,lastpicture,time_tampon,number,flash)
     cv.imshow('img',img)
 
