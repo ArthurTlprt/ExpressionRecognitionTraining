@@ -22,6 +22,13 @@ def showFineResults(preds): #on transforme les données des prédictions en Stri
             index=i
     return(L[index])
 
+def maxpred(preds): #on transforme les données des prédictions en String correspondant
+    msp=np.float32(0)
+    for i in range(5):
+        if preds[0][i]>msp:
+            msp=preds[0][i]
+    return(msp)
+
 def superpose(frame,image,x,y): #arrays en parametres.
     width=np.shape(image)[0]
     height =np.shape(image)[1]
@@ -240,8 +247,17 @@ while 1:
             predsMean=prediction(np_face,mean_image,std_image,visages,visageIndex,frameNumber)
             cv.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
             listeEmotion.append(showFineResults(predsMean))
-            cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
-            #on prend la photo.
+            if(showFineResults(predsMean)=="Happiness"):
+                cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (int(100-maxpred(predsMean)*100),255,255),2)
+                print(int(100-maxpred(predsMean)*100))
+            elif(showFineResults(predsMean)=="Sadness"):
+                cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (255,int(119-maxpred(predsMean)*119),int(119-maxpred(predsMean)*119)),2)
+            elif(showFineResults(predsMean)=="Anger"):
+                cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (int(66-maxpred(predsMean)*66),255,int(66-maxpred(predsMean)*66)),2)
+            elif(showFineResults(predsMean)=="Surprise"):
+                cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (255,255,int(100-maxpred(predsMean)*100)),2)
+            elif(showFineResults(predsMean)=="Neutral"):
+                cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (0,0,0),2)#on prend la photo.
         number,flash,lastpicture,time_tampon=photo(img,width,height,np_flash,listeEmotion,liste_npChiffre,lastpicture,time_tampon,number,flash)
     cv.imshow('img',img)
 
