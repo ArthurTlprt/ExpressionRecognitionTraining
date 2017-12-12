@@ -15,43 +15,20 @@ class LossHistory(C.Callback):
     def on_train_begin(self, logs={}):
         #initialization of the empty dataset
         self.losses = []
-        self.weights = []
-        for l in model.layers:
-            if type(l) is Dense:
-                self.weights.append([])
-                # print("[0]")
-                # print(l.get_weights()[0])
-                # print("[1]")
-                # print(l.get_weights()[1])
 
 
     def on_train_end(self, logs={}):
         # saving dataset into csv
 
+        print(model.layer)
+
         losses_to_save = np.array(self.losses, dtype='float32')
         np.savetxt('loss.csv', losses_to_save, header="x,y", comments="", delimiter=",")
 
-        for i, w in enumerate(self.weights):
-            weights_to_save = np.array(w, dtype='float32')
-            filename = 'weights'+ str(i)+'.csv'
-            print(weights_to_save)
-            np.savetxt(filename, weights_to_save, header="x,y", comments="", delimiter=",")
 
     def on_batch_end(self, batch, logs={}):
         # at each batch we compute historic
         self.losses.append([len(self.losses), logs.get('loss')])
-        for i,l in enumerate(model.layers):
-            if type(l) is Dense:
-                print("#######################")
-                weights = l.get_weights()[0]
-                bias = l.get_weights()[1]
-                # print("call de mean magnitude n",i)
-                # print(i)
-                # print(int(i/2))
-                print(self.weights[int(i/2)])
-                print(len(self.losses) in self.weights[int(i/2)])
-                # try is len(self.losses) in self.weights[int(i/2)]
-                self.weights[int(i/2)].append([len(self.losses), self.mean_magnitude(weights, bias)])
 
     def mean_magnitude(self, weights, bias):
         mean_magnitude = np.append(weights, bias)
