@@ -116,6 +116,17 @@ def play(img, feeling_id, time_remaining, feelings_mean_player1, feelings_mean_p
             writeFeelingToDo(img, winner + ' win!!!')
     return winner
 
+def write(xy, img, text, color, size):
+    cv2_im_rgb = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+    # Pass the image to PIL
+    pil_im = Image.fromarray(cv2_im_rgb)
+    draw = ImageDraw.Draw(pil_im)
+    # use a truetype font
+    font = ImageFont.truetype("fonts/Sansation_Regular.ttf", size)
+    # Draw the text
+    draw.text(xy, text, font=font, fill=color)
+    img= cv.cvtColor(np.array(pil_im), cv.COLOR_RGB2BGR)
+
 if __name__ == "__main__":
     # initilization
     mean_image = image.img_to_array(image.load_img("mean_image.png",target_size=(49,49)))
