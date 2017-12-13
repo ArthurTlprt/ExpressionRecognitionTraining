@@ -10,8 +10,8 @@ import time
 #______________________________________________________________________fonctions________________________________________________________________________________
 
 feelings_to_colors = np.array(
-    [[100, 100, 100],
-    [0, 120, 120],
+    [[120, 120, 120],
+    [0, 150, 150],
     [0, 0, 0],
     [120, 120, 0],
     [250, 0, 0]], dtype='uint8')
@@ -21,7 +21,7 @@ def normalize(image,mean_image,std_image): #normalise l'image des visages avant 
     return np.divide((image-mean_image),std_image)
 
 def showFineResults(preds): #on transforme les données des prédictions en String correspondant
-    L=["Neutral","Happiness", "Sadness", "Surprise", "Anger"]
+    L=["Normal","Happy", "Sad", "Surprised", "Angry"]
     msp=np.float32(0)
     index=0
     for i in range(5):
@@ -174,13 +174,14 @@ def traitement_generique(directory, listeChiffre, listeFin, width, height):
                 np_image[i][j][2]=a
 
         listeFin.append(np_image)
-def write(xy, img, text, color):
+
+def write(xy, img, text, color, size):
     cv2_im_rgb = cv.cvtColor(img,cv.COLOR_BGR2RGB)
     # Pass the image to PIL
     pil_im = Image.fromarray(cv2_im_rgb)
     draw = ImageDraw.Draw(pil_im)
     # use a truetype font
-    font = ImageFont.truetype("fonts/Sansation_Regular.ttf", 80)
+    font = ImageFont.truetype("fonts/Sansation_Regular.ttf", size)
     # Draw the text
     draw.text(xy, text, font=font, fill=color)
     img= cv.cvtColor(np.array(pil_im), cv.COLOR_RGB2BGR)
@@ -261,14 +262,16 @@ while 1:
             superpose(img,np_face,0,49*index)
             #prediction
             predsMean=prediction(np_face,mean_image,std_image,visages,visageIndex,frameNumber)
+
             color = np.dot(predsMean[0], feelings_to_colors)
             color = color.astype(int).tolist()
-            print(type(color))
-            color = (color[1], color[0], color[2])
-            cv.rectangle(img,(x,y), (x+w,y+h), color,2)
+            color_bgr = (color[2], color[1], color[0])
+            cv.rectangle(img,(x,y), (x+w,y+h), color_bgr,2)
             listeEmotion.append(showFineResults(predsMean))
+            color_rgb = tuple(color)
 
-            img = write((x,y), img, showFineResults(predsMean), color)
+            img = write((x+5,y), img, showFineResults(predsMean), color_rgb, int(w/8))
+
 
         number,flash,lastpicture,time_tampon=photo(img,width,height,np_flash,listeEmotion,liste_npChiffre,lastpicture,time_tampon,number,flash)
     cv.imshow('img',img)
