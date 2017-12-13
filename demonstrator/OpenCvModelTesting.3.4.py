@@ -10,11 +10,11 @@ import time
 #______________________________________________________________________fonctions________________________________________________________________________________
 
 feelings_to_colors = np.array(
-    [[250, 250, 250],
-    [0, 0, 250],
+    [[255, 255, 255],
+    [10, 10, 255],
     [0, 0, 0],
-    [0, 250, 0],
-    [250, 0, 0]], dtype='uint8')
+    [10, 255, 10],
+    [255, 10, 10]], dtype='uint8')
 
 
 def normalize(image,mean_image,std_image): #normalise l'image des visages avant la prédiction pour coincider avec le modèle.
