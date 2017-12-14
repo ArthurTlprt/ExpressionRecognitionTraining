@@ -1,6 +1,6 @@
 import numpy as np
 import cv2 as cv
-from PIL import Image
+from PIL import ImageFont, ImageDraw, Image
 import h5py
 from random import shuffle as S
 from keras.preprocessing import image
@@ -9,11 +9,19 @@ import time
 
 #______________________________________________________________________fonctions________________________________________________________________________________
 
+feelings_to_colors = np.array(
+    [[255, 255, 255],
+    [10, 10, 255],
+    [0, 0, 0],
+    [10, 255, 10],
+    [255, 10, 10]], dtype='uint8')
+
+
 def normalize(image,mean_image,std_image): #normalise l'image des visages avant la prédiction pour coincider avec le modèle.
     return np.divide((image-mean_image),std_image)
 
 def showFineResults(preds): #on transforme les données des prédictions en String correspondant
-    L=["Neutral","Happiness", "Sadness", "Surprise", "Anger"]
+    L=["Normal","Happy", "Sad", "Surprised", "Angry"]
     msp=np.float32(0)
     index=0
     for i in range(5):
@@ -21,6 +29,13 @@ def showFineResults(preds): #on transforme les données des prédictions en Stri
             msp=preds[0][i]
             index=i
     return(L[index])
+
+def maxpred(preds): #on transforme les données des prédictions en String correspondant
+    msp=np.float32(0)
+    for i in range(5):
+        if preds[0][i]>msp:
+            msp=preds[0][i]
+    return(msp)
 
 def superpose(frame,image,x,y): #arrays en parametres.
     width=np.shape(image)[0]
@@ -160,6 +175,17 @@ def traitement_generique(directory, listeChiffre, listeFin, width, height):
 
         listeFin.append(np_image)
 
+def write(xy, img, text, color, size):
+    cv2_im_rgb = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+    # Pass the image to PIL
+    pil_im = Image.fromarray(cv2_im_rgb)
+    draw = ImageDraw.Draw(pil_im)
+    # use a truetype font
+    font = ImageFont.truetype("fonts/Sansation_Regular.ttf", size)
+    # Draw the text
+    draw.text(xy, text, font=font, fill=color)
+    img= cv.cvtColor(np.array(pil_im), cv.COLOR_RGB2BGR)
+    return img
 #________________________________________________________Initialisation des variables______________________________________________________________
 mean_image = image.img_to_array(image.load_img("mean_image.png",target_size=(49,49)))#on charge l'image moyenne et l'écart type (pour la normalisation)
 std_image = image.img_to_array(image.load_img("std_image.png",target_size=(49,49)))
@@ -168,7 +194,7 @@ model=load_model('irc-cnn-009-0.642313.h5') #on charge le modèle
 face_cascade = cv.CascadeClassifier('face.xml') #on charge le modèle open_cv qui détecte les visages.
 #camera initilization (dans l'ordre des périphériques de type "caméra", on privilégie les caméras branchées.)
 try:
-    cap = cv.VideoCapture(1) 
+    cap = cv.VideoCapture(1)
     cap.set(cv.CAP_PROP_FRAME_WIDTH,1280)#sets the resolution; for the hd cam.
     cap.set(cv.CAP_PROP_FRAME_HEIGHT,720)
     ret, img = cap.read()
@@ -177,6 +203,8 @@ try:
     height =np.shape(img)[0]
 except:
     cap = cv.VideoCapture(0)
+    cap.set(3,1280)
+    cap.set(4,720)
     ret, img = cap.read()
     img=cv.flip(img,1)
     width=np.shape(img)[1]
@@ -197,7 +225,7 @@ generiqueDirectory="imagestexte/"
 listeGenerique=["Bonjour!.png", "CeMiroirDévoileVosEmotions.png", "Souriez!.png"]
 liste_npGenerique=[]
 traitement_generique(generiqueDirectory, listeGenerique, liste_npGenerique, width, height)
-traitement_logo(chiffreDirectory, listeLogo, liste_npChiffre) #charge les images, les prend 
+traitement_logo(chiffreDirectory, listeLogo, liste_npChiffre) #charge les images, les prend
 time_tampon=0
 tempsDebut=time.time()
 #création de la matrice blanche servant de flash lors de la prise de photographie.
@@ -234,14 +262,19 @@ while 1:
             # remettre tout en np.array
             np_face = np.flip(np.asarray(pil_face, dtype=np.uint8),2)
             superpose(img,np_face,0,49*index)
-
-
             #prediction
             predsMean=prediction(np_face,mean_image,std_image,visages,visageIndex,frameNumber)
-            cv.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
+
+            color = np.dot(predsMean[0], feelings_to_colors)
+            color = color.astype(int).tolist()
+            color_bgr = (color[2], color[1], color[0])
+            cv.rectangle(img,(x,y), (x+w,y+h), color_bgr,2)
             listeEmotion.append(showFineResults(predsMean))
-            cv.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
-            #on prend la photo.
+            color_rgb = tuple(color)
+
+            img = write((x+5,y), img, showFineResults(predsMean), color_rgb, int(w/8))
+
+
         number,flash,lastpicture,time_tampon=photo(img,width,height,np_flash,listeEmotion,liste_npChiffre,lastpicture,time_tampon,number,flash)
     cv.imshow('img',img)
 
