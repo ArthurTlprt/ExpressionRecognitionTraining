@@ -23,7 +23,7 @@ def load_image_thread(row):
     return data
 
 def load_image_thread_rotated(row, angle):
-    
+
     row = row.split(',')
     #print('ceci est la ligne',row)
     liste_degres=[0, 5, -5 , 10, -10]
@@ -36,7 +36,7 @@ def load_image_thread_rotated(row, angle):
     ]
     return data
 
-csv_names = ['Non_Face']
+csv_names = ['Neutral','Happy','Sad','Anger','Surprise']
 
 for csv_name in csv_names:
     print(csv_name)
@@ -77,8 +77,8 @@ for csv_name in csv_names:
             print(c,"/60000")
             if c+ImagesNumber<=60000:
                 print("dans le if...")
-               
-                
+
+
 
                 #csvData=[]
                 m = ThreadPool(12)
@@ -88,7 +88,7 @@ for csv_name in csv_names:
                 images = images+[x[0] for x in data]
                 reg = reg+[x[1] for x in data]
                 classi = classi+[x[2] for x in data]
-                #with open('Neutral', 'w') as class_file: 
+                #with open('Neutral', 'w') as class_file:
                 with open(csv_name+" (copie)","a") as current_csv_write:
                     for line in lines:
                         wr = csv.writer(current_csv_write)
@@ -96,7 +96,7 @@ for csv_name in csv_names:
                         c+=1
             else:
                 print("dans le else...",c)
-                
+
                 #print(c)
                 m = ThreadPool(12)
                 data=m.map(partial(load_image_thread_rotated,angle=liste_degres[i]), lines[0:c-60000])
@@ -109,13 +109,13 @@ for csv_name in csv_names:
                      for line in lines[0:c-60000]:
                         wr = csv.writer(current_csv_write)
                         wr.writerow(line.split(','))
-                        
-                
-                    
+
+
+
                 break
 
             i=i+1
-        
+
 
         g = h5py.File("../classes/training"+
         csv_name+".hdf5", "w")

@@ -1,6 +1,6 @@
 import numpy as np
 import cv2 as cv
-from PIL import Image,ImageOps
+from PIL import ImageFont, ImageDraw, Image
 import numpy as np
 import h5py
 from random import shuffle as S
@@ -69,8 +69,12 @@ def writeFeeling(img, feeling1, feeling2):
     cv.putText(img,feeling1, (100,200), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
     cv.putText(img,feeling2, (int(windowW/2)+100,200), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
 
-def writeFeelingToDo(img, feeling_to_do):
-    cv.putText(img,feeling_to_do, (int(windowW/4),30), cv.FONT_HERSHEY_SIMPLEX, 1, 255)
+def writeFeelingToDo(feeling_to_do):
+    print("pouet")
+    img = write((100, 100), img, "pouet", (100, 100, 0), 80)
+    # cv.putText(img,feeling_to_do, (int(windowW/4),30), cv.FONT_HERSHEY_SIMPLEX, 1, 255)
+    return img
+
 
 def act(img, feeling_id, feelings_mean_player1, feelings_mean_player2):
     img1, img2 = splitInTwoPieces(img)
@@ -95,7 +99,7 @@ def act(img, feeling_id, feelings_mean_player1, feelings_mean_player2):
 
     #writeFeeling(img, feeling1, feeling2)
     feelings_to_do = ["happy", "sad", "surprised", "anger"]
-    writeFeelingToDo(img, 'Do '+feelings_to_do[feeling_id]+
+    img = writeFeelingToDo(img, 'Do '+feelings_to_do[feeling_id]+
     ' face during '+ str(time_remaining)+' sec')
     return img, feelings_mean_player1, feelings_mean_player2
 
@@ -113,8 +117,20 @@ def play(img, feeling_id, time_remaining, feelings_mean_player1, feelings_mean_p
             else:
                 winner = "Player2"
         if feeling_id > 3:
-            writeFeelingToDo(img, winner + ' win!!!')
-    return winner
+            img = writeFeelingToDo(img, winner + ' win!!!')
+    return img, winner
+
+def write(xy, img, text, color, size):
+    cv2_im_rgb = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+    # Pass the image to PIL
+    pil_im = Image.fromarray(cv2_im_rgb)
+    draw = ImageDraw.Draw(pil_im)
+    # use a truetype font
+    font = ImageFont.truetype("fonts/Sansation_Regular.ttf", size)
+    # Draw the text
+    draw.text(xy, text, font=font, fill=color)
+    img= cv.cvtColor(np.array(pil_im), cv.COLOR_RGB2BGR)
+    return img
 
 if __name__ == "__main__":
     # initilization
@@ -143,7 +159,7 @@ if __name__ == "__main__":
 
         windowH = img.shape[0]
         windowW = img.shape[1]
-        winner = play(img, feeling_id, time_remaining,
+        img, winner = play(img, feeling_id, time_remaining,
         feelings_mean_player1, feelings_mean_player2, winner)
 
         cv.imshow('img',img)
