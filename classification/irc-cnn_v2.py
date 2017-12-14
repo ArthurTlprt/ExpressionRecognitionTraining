@@ -215,9 +215,6 @@ def load_mean_std(h5_path):
 
 def load_data():
 
-    #f = h5py.File("../classescop/shuffled/trainingNeutral.hdf5", 'r')
-
-
 
     csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger']
 
@@ -228,7 +225,7 @@ def load_data():
 
     for i, csv_name in enumerate(csv_names):
         print(i)
-        f = h5py.File("../classes/training"+csv_name+".hdf5", 'r')
+        f = h5py.File("../classescop/shuffled/training"+csv_name+".hdf5", 'r')
         images_training[i*48000:(i+1)*48000] = f['data'][:48000]
         images_validation[i*12000:(i+1)*12000] = f['data'][48000:60000]
         annotations_training[i*48000:(i+1)*48000] = np.full((48000), i, dtype=np.uint8)
@@ -261,7 +258,7 @@ if __name__ == "__main__":
     model = inception_resnet_v2()
 
     print('Optimization...')
-    adam = optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+    adam = optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['acc'])
 
 
