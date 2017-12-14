@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Mirror</title>
+    <style>
+      body {
+        background-color: black;
+        color: white;
+        margin-top: 98%;
+
+      }
+      div{margin-top: 10%;
+        text-align: center;}
+      p
+      {
+        text-align: center;
+        
+      }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <div id="center">
+
+    </div>
+
+  </body>
+  <script>
+  var socket = io();
+  socket.on('new', function(feelings){
+    console.log("new feeling received: ");
+    console.log(feelings)
+    document.getElementById('center').innerHTML = '';
+    feelings.forEach(function(feeling) {
+      var elem = document.createElement("img");
+      elem.src = 'emoji/'+feeling+'.png';
+      document.getElementById('center').appendChild(elem)
+
+    })
+  })
+  </script>
+</html>

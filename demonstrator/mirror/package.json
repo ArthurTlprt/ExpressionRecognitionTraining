@@ -1,0 +1,9 @@
+{
+  "name": "mirror",
+  "version": "0.0.1",
+  "description": "smile and a happy smile pop on the mirror! :)",
+  "dependencies": {
+    "express": "^4.16.2",
+    "socket.io": "1.7.2"
+  }
+}
