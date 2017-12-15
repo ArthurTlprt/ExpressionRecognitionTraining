@@ -14,7 +14,7 @@ import tensorflow as tf
 
 
 def generate_arrays_from_file(images, labels, batch_size=32, shuffle=True):
-    x = np.zeros((batch_size, 64, 64,1))
+    x = np.zeros((batch_size, 227, 227,1))
     y = np.zeros((batch_size, 5))
     batch_id = 0
     idx = np.arange(0, len(images))
@@ -24,7 +24,7 @@ def generate_arrays_from_file(images, labels, batch_size=32, shuffle=True):
         #images, labels = zip(*c)
     while 1:
         for i in idx:
-            x[batch_id, ...] = images[i].reshape(64,64,1)
+            x[batch_id, ...] = images[i].reshape(227,227,1)
             y[batch_id, ...] = keras.utils.to_categorical(labels[i], num_classes=5)
             if batch_id == (batch_size - 1):
                 yield (x, y)
@@ -102,18 +102,18 @@ def load_data():
 
     csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger']
 
-    images_training = np.zeros((5*48000, 64, 64), np.float32)
-    images_validation = np.zeros((5*12000, 64, 64), np.float32)
-    annotations_training = np.zeros((5*48000), np.uint8)
-    annotations_validation = np.zeros((5*12000), np.uint8)
+    images_training = np.zeros((5*train_size, 227, 227), np.float32)
+    images_validation = np.zeros((5*val_size, 227, 227), np.float32)
+    annotations_training = np.zeros((5*train_size), np.uint8)
+    annotations_validation = np.zeros((5*val_size), np.uint8)
 
     for i, csv_name in enumerate(csv_names):
         print(i)
         f = h5py.File("/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/classesBW/ShuffledBW/training"+csv_name+".hdf5", 'r')
-        images_training[i*48000:(i+1)*48000] = f['data'][:48000]
-        images_validation[i*12000:(i+1)*12000] = f['data'][48000:60000]
-        annotations_training[i*48000:(i+1)*48000] = np.full((48000), i, dtype=np.uint8)
-        annotations_validation[i*12000:(i+1)*12000] = np.full((12000), i, dtype=np.uint8)
+        images_training[i*train_size:(i+1)*train_size] = f['data'][:train_size]
+        images_validation[i*val_size:(i+1)*val_size] = f['data'][train_size:class_size]
+        annotations_training[i*train_size:(i+1)*train_size] = np.full((train_size), i, dtype=np.uint8)
+        annotations_validation[i*val_size:(i+1)*val_size] = np.full((val_size), i, dtype=np.uint8)
         f.close()
 
     return images_training, annotations_training, images_validation, annotations_validation
@@ -122,7 +122,9 @@ def load_data():
 def normalize_image(image):
     return np.divide((image - mean_image), std_image)
 
-
+train_size = 8000
+val_size = 2000
+class_size = 10000
 mean_image, std_image = load_mean_std('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/classesBW/mean_std.hdf5')
 
 
@@ -151,7 +153,7 @@ if __name__ == "__main__":
     tensorboard = keras.callbacks.TensorBoard(log_dir='./logs_v2', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None)
     csv_logger = CSVLogger('irc-cnn.log', append=True)
     checkpointer = ModelCheckpoint(filepath='snapshotsBW/irc-cnn-{epoch:03d}-{val_loss:.6f}.h5', verbose=1, save_best_only=True)
-    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training), int(48000*5/32), epochs=500, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, shuffle=False), validation_steps=int(12000*5/32), max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0)
+    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training), int(train_size*5/32), epochs=500, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, shuffle=False), validation_steps=int(val_size*5/32), max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0)
 
     print('Recording...')
     model.save('8layers.h5')
