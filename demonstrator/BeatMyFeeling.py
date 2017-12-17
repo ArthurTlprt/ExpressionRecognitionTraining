@@ -50,52 +50,63 @@ def getScore(np_face, feeling_id):
     # print(preds[0][feeling_id+1])
     return preds[0][feeling_id+1]
 
+def writeScores(img, score1, score2):
+    img = write( (100,130), img, str(int(score1*100)), (int(255*(1-score1)), int(255*score1), 0), 40)
+    img = write( (int(windowW/2)+100,130), img, str(int(score2*100)), (int(255*(1-score2)), int(255*score2), 0), 40)
+    return img
+
 def splitInTwoPieces(img):
-    cv.line(img, (0,49), (windowW,49) , (100, 100, 100))
-    cv.line(img, (0,50), (windowW,50) , (100, 100, 100))
-    cv.line(img, (0,51), (windowW,51) , (100, 100, 100))
-    cv.line(img, (int(windowW/2)-1, 51), (int(windowW/2)-1, windowH), (100, 100, 100))
-    cv.line(img, (int(windowW/2), 51), (int(windowW/2), windowH), (100, 100, 100))
-    cv.line(img, (int(windowW/2)+1, 51), (int(windowW/2)+1, windowH), (100, 100, 100))
+    cv.line(img, (0,59), (windowW,59) , (100, 100, 100))
+    cv.line(img, (0,60), (windowW,60) , (100, 100, 100))
+    cv.line(img, (0,61), (windowW,61) , (100, 100, 100))
+    cv.line(img, (int(windowW/2)-1, 61), (int(windowW/2)-1, windowH), (100, 100, 100))
+    cv.line(img, (int(windowW/2), 61), (int(windowW/2), windowH), (100, 100, 100))
+    cv.line(img, (int(windowW/2)+1, 61), (int(windowW/2)+1, windowH), (100, 100, 100))
     img1 = img[:,:int(windowW/2),:]
     img2 = img[:,int(windowW/2):,:]
     return img1, img2
 
 def writePlayer(img):
-    cv.putText(img,"Player 1", (100,100), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
-    cv.putText(img,"Player 2", (int(windowW/2)+100,100), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
+    img = write( (100,100), img, "Player 1", (255, 255, 255), 40)
+    img = write( (int(windowW/2)+100,100), img, "Player 2", (255, 255, 255), 40)
+    # cv.putText(img,"Player 1", (100,100), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
+    # cv.putText(img,"Player 2", (int(windowW/2)+100,100), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
+    return img
 
-def writeFeeling(img, feeling1, feeling2):
-    cv.putText(img,feeling1, (100,200), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
-    cv.putText(img,feeling2, (int(windowW/2)+100,200), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
+# def writeFeeling(img, feeling1, feeling2):
+#     print("poeut")
+#     cv.putText(img,feeling1, (100,200), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
+#     cv.putText(img,feeling2, (int(windowW/2)+100,200), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
 
-def writeFeelingToDo(feeling_to_do):
-    print("pouet")
-    img = write((100, 100), img, "pouet", (100, 100, 0), 80)
+def writeFeelingToDo(img, feeling_to_do):
+    img = write( (int(windowW/4),0), img, feeling_to_do, (255, 255, 255), 50)
     # cv.putText(img,feeling_to_do, (int(windowW/4),30), cv.FONT_HERSHEY_SIMPLEX, 1, 255)
     return img
 
 
 def act(img, feeling_id, feelings_mean_player1, feelings_mean_player2):
     img1, img2 = splitInTwoPieces(img)
-    writePlayer(img)
+    img = writePlayer(img)
+    score1 = score2 = 0
 
     face1 = face_cascade.detectMultiScale(img1, 1.3, 5)
     face2 = face_cascade.detectMultiScale(img2, 1.3, 5)
 
     try:
         (x,y,w,h) = face1[0]
-        feelings_mean_player1[feeling_id].append(
-        getScore(img1[y:y+h, x:x+w], feeling_id))
+        score1 = getScore(img1[y:y+h, x:x+w], feeling_id)
+        feelings_mean_player1[feeling_id].append(score1)
     except:
         pass
 
     try:
         (x,y,w,h) = face2[0]
-        feelings_mean_player2[feeling_id].append(
-        getScore(img2[y:y+h, x:x+w], feeling_id))
+        score2 = getScore(img2[y:y+h, x:x+w], feeling_id)
+        feelings_mean_player2[feeling_id].append(score2)
     except:
         pass
+
+    img = writeScores(img, score1, score2)
 
     #writeFeeling(img, feeling1, feeling2)
     feelings_to_do = ["happy", "sad", "surprised", "anger"]
