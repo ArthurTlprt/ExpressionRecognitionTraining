@@ -42,8 +42,8 @@ for csv_name in csv_names:
     print(csv_name)
     current_csv_read=open(csv_name,"r")
     lines = [line.rstrip('\r\n') for line in current_csv_read ]
-    if len(lines) == 60000:
-        print("fichier de 60000 images, ok pour h5")
+    if len(lines) == 10000:
+        print("fichier de 10000 images, ok pour h5")
 
         m = ThreadPool(12)
         data = m.map(load_image_thread, lines)
@@ -55,7 +55,7 @@ for csv_name in csv_names:
         reg = [x[1] for x in data]
         classi = [x[2] for x in data]
 
-        g = h5py.File("../classes/training"+csv_name+".hdf5", "w")
+        g = h5py.File("../classes227/training"+csv_name+".hdf5", "w")
         g.create_dataset('data', data=images,dtype=np.float32)
         g.create_dataset('label_regression', data=reg,dtype=np.float32)
         g.create_dataset('label_classification', data=classi,dtype=np.uint8)
@@ -73,9 +73,9 @@ for csv_name in csv_names:
         reg = []
         classi = []
         angles = []
-        while (c != 60000):
-            print(c,"/60000")
-            if c+ImagesNumber<=60000:
+        while (c != 10000):
+            print(c,"/10000")
+            if c+ImagesNumber<=10000:
                 print("dans le if...")
 
 
@@ -106,7 +106,7 @@ for csv_name in csv_names:
                 reg = reg+[x[1] for x in data]
                 classi = classi+[x[2] for x in data]
                 with open(csv_name+" (copie)","a") as current_csv_write:
-                     for line in lines[0:c-60000]:
+                     for line in lines[0:c-10000]:
                         wr = csv.writer(current_csv_write)
                         wr.writerow(line.split(','))
 
@@ -117,7 +117,7 @@ for csv_name in csv_names:
             i=i+1
 
 
-        g = h5py.File("../classes/training"+
+        g = h5py.File("../classes227/training"+
         csv_name+".hdf5", "w")
         g.create_dataset('data', data=images,dtype=np.float32)
         g.create_dataset('label_regression', data=reg,dtype=np.float32)
