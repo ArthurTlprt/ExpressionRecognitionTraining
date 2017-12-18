@@ -74,7 +74,7 @@ def testTousHappy(liste):
     if(len(liste)==0):
         bool=False
     for i in liste:
-        if i!="Happiness":
+        if i!="Happy":
             bool=False
     return bool
 
