@@ -12,10 +12,11 @@ from keras.layers import Conv2D, BatchNormalization, Activation, Lambda, MaxPool
 from keras import optimizers
 import time
 from socketIO_client import SocketIO, LoggingNamespace
+from operator import itemgetter
 
-print("fin des imports")
+
 s = SocketIO('localhost', 3000, LoggingNamespace)
-print("un peu long comme instruction...")
+
 #import webbrowser
 #tentative d'implémenter une moyenne sur les prédictions pour tous les visages.
 
@@ -75,11 +76,11 @@ except:
 # we read the cam indefinitely
 
 
-print("dans la boucle while:")
 while 1:
     t=time.time()
     ret, img = cap.read()
     img=cv2.flip(img,1)
+    unsortedFeelings=[]
     feelings=[]
 
     # find the face
@@ -92,22 +93,18 @@ while 1:
             visageIndex=len(visages)-1
             for i in range(frameNumber):
                 visages[0][4].append([[0,0,0,0,0]])
-        #print(visages)
 
         for i,visage in enumerate(visages): #si pas de visage au début, on ne passe pas dans la boucle?
             if abs(x-visage[0])<w/10 and abs(y-visage[1]<h/10):
                 #ceci est un visage qui a été repéré à la frame précédente, on en repère l'index.
                 visageIndex=i
-                #print("on passe dans le if...")
             else:
                 #sinon on ajoute le visage:
-                #print("on passe dans le else...")
                 visages.append([x,y,w,h,[],0]) #prediction=visage[4]/index=visage[5]
                 visageIndex=len(visages)-1
                 for j in range(frameNumber):
                     visages[len(visages)-1][4].append([[0,0,0,0,0]])
                 break
-        #print (len(visages))
         #drawing rectangles
         cv2.rectangle(img,(x,y),(x+w,y+h),(255,0,0),2)
         # subarray corresponding to the face
@@ -131,19 +128,19 @@ while 1:
         for prediction in visages[visageIndex][4]:
             predsSum=predsSum+prediction
         predsMean=predsSum/frameNumber
-        #print (predsMean)
         predsSum=[[0,0,0,0,0]]
         cv2.putText(img, showFineResults(predsMean), (x,y+w+int(w/12)), cv2.FONT_HERSHEY_PLAIN,  w/200, (0,0,255),2)
-        feelings.append(showFineResults(predsMean))
-        #print(visageIndex)
+        unsortedFeelings.append((showFineResults(predsMean),visages[visageIndex][2]))
+    unsortedFeelings=sorted(unsortedFeelings, key=itemgetter(1),reverse=True)
+    for prediction in unsortedFeelings:
+    	feelings.append(prediction[0])
 
-    img=cv2.resize(img,None,fx=1.6,fy=1.6)
+    img=cv2.resize(img,None,fx=0.5,fy=0.5)
     cv2.imshow('img',img)
     s.emit('new feeling',  feelings)
     k = cv2.waitKey(30) & 0xff
     if k == 27:
         break
-    #print(t-time.time())
 
 cap.release()
 cv2.destroyAllWindows()
