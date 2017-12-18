@@ -13,6 +13,9 @@ from keras import optimizers
 from keras.callbacks import ModelCheckpoint, CSVLogger
 import time
 
+
+# idée passer une vidéo et devoir imiter les expressions faciales de l'acteur
+
 def normalize(image,mean_image,std_image):
     return np.divide((image-mean_image),std_image)
 
@@ -47,12 +50,20 @@ def getScore(np_face, feeling_id):
     #prediction
     np_face =np.expand_dims(np_face, axis=0)
     preds= model.predict(normalize(np_face,mean_image,std_image))
-    # print(preds[0][feeling_id+1])
     return preds[0][feeling_id+1]
 
 def writeScores(img, score1, score2):
-    img = write( (100,130), img, str(int(score1*100)), (int(255*(1-score1)), int(255*score1), 0), 40)
-    img = write( (int(windowW/2)+100,130), img, str(int(score2*100)), (int(255*(1-score2)), int(255*score2), 0), 40)
+    color1 = (int(255*(1-score1)), int(255*score1), 0)
+    color2 = (int(255*(1-score2)), int(255*score2), 0)
+    img = write( (100,130), img, str(int(score1*100)), color1, 40)
+    img = write( (int(windowW/2)+100,130), img, str(int(score2*100)), color2, 40)
+    return img
+
+def writePoints(img, points1, points2):
+    text1 = str(int(points1*10.0)) + "pts"
+    text2 = str(int(points2*10.0)) + "pts"
+    img = write( (160,130), img, text1, (255, 255, 255), 40)
+    img = write( (int(windowW/2)+160,130), img, text2, (255, 255, 255), 40)
     return img
 
 def splitInTwoPieces(img):
@@ -69,22 +80,15 @@ def splitInTwoPieces(img):
 def writePlayer(img):
     img = write( (100,100), img, "Player 1", (255, 255, 255), 40)
     img = write( (int(windowW/2)+100,100), img, "Player 2", (255, 255, 255), 40)
-    # cv.putText(img,"Player 1", (100,100), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
-    # cv.putText(img,"Player 2", (int(windowW/2)+100,100), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
     return img
-
-# def writeFeeling(img, feeling1, feeling2):
-#     print("poeut")
-#     cv.putText(img,feeling1, (100,200), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
-#     cv.putText(img,feeling2, (int(windowW/2)+100,200), cv.FONT_HERSHEY_SIMPLEX, 0.5, 255)
 
 def writeFeelingToDo(img, feeling_to_do):
     img = write( (int(windowW/4),0), img, feeling_to_do, (255, 255, 255), 50)
-    # cv.putText(img,feeling_to_do, (int(windowW/4),30), cv.FONT_HERSHEY_SIMPLEX, 1, 255)
     return img
 
 
 def act(img, feeling_id, feelings_mean_player1, feelings_mean_player2):
+    global points1, points2
     img1, img2 = splitInTwoPieces(img)
     img = writePlayer(img)
     score1 = score2 = 0
@@ -107,19 +111,21 @@ def act(img, feeling_id, feelings_mean_player1, feelings_mean_player2):
         pass
 
     img = writeScores(img, score1, score2)
+    points1 += score1
+    points2 += score2
+    img = writePoints(img, points1, points2)
 
-    #writeFeeling(img, feeling1, feeling2)
     feelings_to_do = ["happy", "sad", "surprised", "anger"]
     img = writeFeelingToDo(img, 'Do '+feelings_to_do[feeling_id]+
     ' face during '+ str(time_remaining)+' sec')
     return img, feelings_mean_player1, feelings_mean_player2
 
 def play(img, feeling_id, time_remaining, feelings_mean_player1, feelings_mean_player2, winner):
+    global points1, points2
     try:
         img, feelings_mean_player1, feelings_mean_player2 = act(img, feeling_id, feelings_mean_player1, feelings_mean_player2)
     except:
         average = []
-        print(feeling_id)
         if feeling_id == 4:
             score1 = sum([sum(feeling) for feeling in feelings_mean_player1])
             score2 = sum([sum(feeling) for feeling in feelings_mean_player2])
@@ -128,6 +134,7 @@ def play(img, feeling_id, time_remaining, feelings_mean_player1, feelings_mean_p
             else:
                 winner = "Player2"
         if feeling_id > 3:
+            img = writePoints(img, points1, points2)
             img = writeFeelingToDo(img, winner + ' win!!!')
     return img, winner
 
@@ -151,6 +158,7 @@ if __name__ == "__main__":
     face_cascade = cv.CascadeClassifier('face.xml')
     feelings_mean_player1 = [[], [], [], []]
     feelings_mean_player2 = [[], [], [], []]
+    points1 = points2 = 0
     winner = ""
     windowH=0
     windowW=0
