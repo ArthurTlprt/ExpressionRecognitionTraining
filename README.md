@@ -13,7 +13,7 @@ This is a deep learning model to classify facial expressions in five categories:
 
 We implement different architectures:
  * [Inception-resnet](https://drive.google.com/file/d/0Bywjnd8SQSB6UmdEbzcyRF8xTWs/view)
- * Vgg16
+ * [Vgg16](https://arxiv.org/abs/1409.1556)
  * [Inception-resnet v2](https://drive.google.com/file/d/0Bywjnd8SQSB6UmdEbzcyRF8xTWs/view)
  * [A 8 layers architecture](http://www.jeet.or.kr/LTKPSWeb/uploadfiles/be/201711/231120171455057903750.pdf)
 
