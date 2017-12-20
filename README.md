@@ -1,5 +1,9 @@
 # Expression recognition
 
+
+If you want to use our model in your project, we suggest you to visit this repository.
+This repository is dedicated to the preparation of the data and the training on Affect-Net.
+
 This is a deep learning model to classify facial expressions in five categories:
  * Neutral
  * Happy
