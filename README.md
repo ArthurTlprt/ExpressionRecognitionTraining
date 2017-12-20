@@ -1,17 +1,17 @@
 # Expression recognition
 
 This is a deep learning model to classify facial expressions in five categories:
-..* Neutral
-..* Happy
-..* Sad
-..* Angry
-..* Surprised
+ ..* Neutral
+ ..* Happy
+ ..* Sad
+ ..* Angry
+ ..* Surprised
 
 We implement different architectures:
-..* Inception-resnet
-..* Vgg16
-..* Inception-resnet v2
-..* A 8 layers architecture
+ ..* Inception-resnet
+ ..* Vgg16
+ ..* Inception-resnet v2
+ ..* A 8 layers architecture
 
 To train and evaluate our networks, we used the database Affect-Net, which is composed of 1M of images.
 
