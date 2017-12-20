@@ -46,6 +46,7 @@ def custom_conv2d(x, filters, kernel, strides, padding, normalize, activation):
 def inception_resnet_v2_stem(x):
 
     x = custom_conv2d(x, 32, (3, 3), (2, 2), 'valid', True, 'relu')
+    print(type(x))
     # V
     x = custom_conv2d(x, 32, (3, 3), (1, 1), 'same', True, 'relu')
     x = custom_conv2d(x, 64, (3, 3), (1, 1), 'same', True, 'relu')
@@ -219,7 +220,8 @@ def load_mean_std(h5_path):
 def load_data():
 
 
-    csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger']
+    # csv_names = ['Neutral', 'Happy', 'Sad', 'Surprise', 'Anger']
+    csv_names = ['Neutral']
 
     images_training = np.zeros((5*48000, 64, 64), np.float32)
     images_validation = np.zeros((5*12000, 64, 64), np.float32)

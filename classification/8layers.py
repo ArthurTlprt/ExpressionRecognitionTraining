@@ -9,11 +9,55 @@ from keras.utils import plot_model
 from keras.models import Sequential, Model
 from keras.layers import Input, Conv2D, BatchNormalization, Activation, Lambda, MaxPooling2D, Flatten, Dense, Dropout, Concatenate, Add, AveragePooling2D, GlobalAveragePooling2D
 from PIL import Image, ImageDraw, ImageOps
-import tensorflow as tf
+import keras.callbacks as C
+
+#import tensorflow as tf
 
 
+# Callback
 
-def generate_arrays_from_file(images, labels, batch_size=32, shuffle=True):
+class LossHistory(C.Callback):
+
+    def on_train_begin(self, logs={}):
+        #initialization of the empty dataset
+        self.losses = []
+
+        self.weights = {}
+        for layer in model.layers:
+            if type(layer) is Dense:
+                self.weights[layer.name] = []
+
+    def on_epoch_end(self, epoch, logs={}):
+        # saving dataset into csv
+        losses_to_save = np.array(self.losses, dtype='float32')
+        np.savetxt('loss.csv', losses_to_save, header="x,y", comments="", delimiter=",")
+
+        for dense in self.weights:
+            weights_to_save = np.array(self.weights[dense], dtype='float32')
+            filename = dense +'.csv'
+            np.savetxt(filename, weights_to_save, header="x,y", comments="", delimiter=",")
+
+    def on_batch_end(self, batch, logs={}):
+        # at each batch we compute historic
+        self.losses.append([len(self.losses), logs.get('loss')])
+        for l in model.layers:
+            if type(l) is Dense:
+                weights = l.get_weights()[0].flatten()
+                bias = l.get_weights()[1].flatten()
+                self.weights[l.name].append([len(self.losses), self.mean_magnitude(weights, bias)])
+
+    def mean_magnitude(self, weights, bias):
+        mean_magnitude = np.append(weights, bias)
+        n = float(mean_magnitude.size)
+        mean_magnitude = np.square(mean_magnitude)
+        mean_magnitude = np.sum(mean_magnitude)
+        mean_magnitude = np.divide(mean_magnitude, n)
+        mean_magnitude = np.sqrt(mean_magnitude)
+        mean_magnitude = np.log10(mean_magnitude)
+        return mean_magnitude
+
+
+def generate_arrays_from_file(images, labels, batch_size=16, shuffle=True):
     x = np.zeros((batch_size, 227, 227,1))
     y = np.zeros((batch_size, 5))
     batch_id = 0
@@ -47,40 +91,49 @@ def custom_conv2d(x, filters, kernel, strides, padding, normalize, activation):
 
 def architecture():
     i = Input(shape=(227, 227, 1))
+    print(i,type(i))
 
     print("C1")
-    x = custom_conv2d(i, 96, (11, 11), (1, 1), 'valid', True, 'relu')
+    x = custom_conv2d(i, 96, (11, 11), (4, 4), 'valid', True, 'relu')
     print(x)
-    x = MaxPooling2D(pool_size=(4, 4), strides=(4, 4), padding='valid')(x)
+    x = MaxPooling2D(pool_size=(2, 2))(x)
     print(x)
 
     print("C2")
-    x = custom_conv2d(x, 128, (5, 5), (1, 1), 'valid', True, 'relu')
+    x = custom_conv2d(x, 128, (5, 5), (1, 1), 'same', True, 'relu')
     print(x)
-    x = MaxPooling2D(pool_size=(5, 5), strides=(2, 2), padding='same')(x)
+    x = MaxPooling2D(pool_size=(2, 2))(x)
 
     print("C3")
-    x = custom_conv2d(x, 192, (3, 3), (2, 2), 'valid', True, 'relu')
+    x = custom_conv2d(x, 192, (3, 3), (1, 1), 'same', True, 'relu')
     print(x)
 
     print("C4")
-    x = custom_conv2d(x, 192, (3, 3), (2, 2), 'valid', True, 'relu')
+    x = custom_conv2d(x, 192, (3, 3), (1, 1), 'same', True, 'relu')
     print(x)
 
     print("C5")
-    x = custom_conv2d(x, 128, (3, 3), (2, 2), 'valid', True, 'relu')
+    x = custom_conv2d(x, 128, (3, 3), (1, 1), 'same', True, 'relu')
+    print(x,type(x))
+
+    x = MaxPooling2D(pool_size=(2, 2))(x)
+
+    x = Flatten()(x)
+    print("Dense 1")
+    x = Dense(1024, activation='relu')(x)
+    x = Dropout(0.5)(x)
+    #x = tf.reshape(x, [-1, 1024])
+    print(x,type(x))
+
+    print("Dense 2")
+    x = Dense(1024, activation='relu')(x)
+    x = Dropout(0.5)(x)
     print(x)
 
-    x = MaxPooling2D(pool_size=(3, 3), strides=(2, 2), padding='same')(x)
-
-    x = Dense(1024, activation='relu')(x)
-    x = Dropout(0.5)(x)
-
-    x = Dense(1024, activation='relu')(x)
-    x = Dropout(0.5)(x)
+    print("Dense 3")
 
     o = Dense(5, activation='softmax')(x)
-
+    print(o,type(o))
     model = Model(inputs=i, outputs=o)
 
     model.summary()
@@ -109,7 +162,7 @@ def load_data():
 
     for i, csv_name in enumerate(csv_names):
         print(i)
-        f = h5py.File("/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/classesBW/ShuffledBW/training"+csv_name+".hdf5", 'r')
+        f = h5py.File("/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/classes227/Shuffled227/training"+csv_name+".hdf5", 'r')
         images_training[i*train_size:(i+1)*train_size] = f['data'][:train_size]
         images_validation[i*val_size:(i+1)*val_size] = f['data'][train_size:class_size]
         annotations_training[i*train_size:(i+1)*train_size] = np.full((train_size), i, dtype=np.uint8)
@@ -125,7 +178,8 @@ def normalize_image(image):
 train_size = 8000
 val_size = 2000
 class_size = 10000
-mean_image, std_image = load_mean_std('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/classesBW/mean_std.hdf5')
+batch_size = 16
+mean_image, std_image = load_mean_std('/media/isen/Data_windows/PROJET_M1_DL/Affect-Net/MAN/classes227/mean_std.hdf5')
 
 
 if __name__ == "__main__":
@@ -148,12 +202,9 @@ if __name__ == "__main__":
     adam = optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
     model.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['acc'])
 
-
     print('Training...')
-    tensorboard = keras.callbacks.TensorBoard(log_dir='./logs_v2', histogram_freq=0, batch_size=32, write_graph=True, write_grads=False, write_images=False, embeddings_freq=0, embeddings_layer_names=None, embeddings_metadata=None)
-    csv_logger = CSVLogger('irc-cnn.log', append=True)
     checkpointer = ModelCheckpoint(filepath='snapshotsBW/irc-cnn-{epoch:03d}-{val_loss:.6f}.h5', verbose=1, save_best_only=True)
-    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training), int(train_size*5/32), epochs=500, callbacks=[csv_logger, checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, shuffle=False), validation_steps=int(val_size*5/32), max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0)
+    hist = model.fit_generator(generate_arrays_from_file(images_training, annotations_training), int(train_size*5/batch_size), epochs=500, callbacks=[LossHistory(),checkpointer], validation_data=generate_arrays_from_file(images_validation, annotations_validation, shuffle=False), validation_steps=int(val_size*5/batch_size), max_queue_size=1, workers=1, use_multiprocessing=False, initial_epoch=0)
 
     print('Recording...')
     model.save('8layers.h5')
